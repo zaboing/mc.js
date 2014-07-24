@@ -1,0 +1,15 @@
+name: JavaScript Plugin
+main: javascriptserver.MainPlugin
+version: Alpha
+
+commands:
+  javascript:
+    description: Execute the given JavaScript string.
+    usage: /<command> [-d "Direct input string"] [-f "Input file name"] [-c] [-o "Output file name"]
+    permission: <plugin name>.basic
+    permission-message: You don't have <permission>
+  js:
+    description: Execute the given alias
+    usage: /<command> "alias"
+    permission: <plugin name>.basic
+    permission-message: You don't have <permission>
