@@ -93,8 +93,9 @@ public class MainPlugin extends JavaPlugin {
 	}
 
 	public void onDisable() {
-		BukkitListener.areaEnterListeners.clear();
 		BukkitListener.areas.clear();
+		BukkitListener.areaEnterListeners.clear();
+		BukkitListener.areaExitListeners.clear();
 		try {
 			ObjectOutputStream oos = new ObjectOutputStream(
 					new FileOutputStream("plugins/jsserver.obj"));

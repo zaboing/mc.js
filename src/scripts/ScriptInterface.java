@@ -18,6 +18,7 @@ import org.bukkit.entity.Player;
 
 import scripts.BlockSelection.Block;
 import events.AreaEnterListener;
+import events.AreaExitListener;
 import events.BukkitListener;
 
 public class ScriptInterface {
@@ -257,6 +258,10 @@ public class ScriptInterface {
 	public void addAreaEnterListener(AreaEnterListener listener) {
 		BukkitListener.areaEnterListeners.add(listener);
 	}
+	
+	public void addAreaExitListener(AreaExitListener listener) {
+		BukkitListener.areaExitListeners.add(listener);
+	}
 
 	/**
 	 * Registers an area to be used by the global event handler.
@@ -297,18 +302,7 @@ public class ScriptInterface {
 	 * @param object The JS-Object holding the area information
 	 */
 	public void registerArea(ScriptObject object) {
-		if (object.has("radius")) {
-			registerArea(object.getInt("x"), object.getInt("y"),
-					object.getInt("z"), object.getInt("radius"));
-		} else if (object.has("rad_sq")) {
-			registerArea(object.getInt("x"), object.getInt("y"),
-					object.getInt("z"),
-					(int) Math.sqrt(object.getInt("radius")));
-		} else {
-			registerArea(object.getInt("x"), object.getInt("y"),
-					object.getInt("z"), object.getInt("width"),
-					object.getInt("height"), object.getInt("depth"));
-		}
+		registerArea(Area.convertFromJSObject(object));
 	}
 
 	public void move(String transform) {

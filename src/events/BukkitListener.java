@@ -16,6 +16,7 @@ public class BukkitListener implements Listener {
 	public static final Set<Area> areas = new HashSet<Area>();
 	
 	public static final Set<AreaEnterListener> areaEnterListeners = new HashSet<AreaEnterListener>();
+	public static final Set<AreaExitListener> areaExitListeners = new HashSet<AreaExitListener>();
 	
 	@EventHandler
 	public void playerMove(PlayerMoveEvent event) {
@@ -30,13 +31,15 @@ public class BukkitListener implements Listener {
 				// NOT IN AREA
 				continue;
 			}
-			if (isFrom && !isTo) {
-				// TODO: AREA EXIT
-				continue;
-			}
 			if (!isFrom && isTo) {
 				for (AreaEnterListener listener: areaEnterListeners) {
 					listener.onAreaEnter(new AreaEvent(area, player));
+				}
+				continue;
+			}
+			if (isFrom && !isTo) {
+				for (AreaExitListener listener : areaExitListeners) {
+					listener.onAreaExit(new AreaEvent(area, player));
 				}
 				continue;
 			}
