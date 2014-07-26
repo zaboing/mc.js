@@ -4,7 +4,11 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 
+import javascriptserver.Area;
+import javascriptserver.CircularArea;
 import javascriptserver.MainPlugin;
+import javascriptserver.RectangularArea;
+import jdk.nashorn.internal.runtime.ScriptObject;
 
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -13,6 +17,8 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
 import scripts.BlockSelection.Block;
+import events.AreaEnterListener;
+import events.BukkitListener;
 
 public class ScriptInterface {
 
@@ -231,9 +237,9 @@ public class ScriptInterface {
 		}
 		return bs;
 	}
-	
+
 	public void door(int x, int y, int z) {
-		
+
 	}
 
 	public void log(String message) {
@@ -246,6 +252,63 @@ public class ScriptInterface {
 
 	public void blockLight(String block) {
 		plugin.setLight(Material.getMaterial(block));
+	}
+
+	public void addAreaEnterListener(AreaEnterListener listener) {
+		BukkitListener.areaEnterListeners.add(listener);
+	}
+
+	/**
+	 * Registers an area to be used by the global event handler.
+	 * @param area The Area
+	 */
+	public void registerArea(Area area) {
+		BukkitListener.areas.add(area);
+	}
+
+	/**
+	 * Registers a rectangular area. See {@link #registerArea(Area)} and {@link RectangularArea}
+	 * @param x The X-Coordinate of the corner of the area
+	 * @param y The Y-Coordinate of the corner of the area
+	 * @param z The Z-Coordinate of the corner of the area
+	 * @param width The width of the area
+	 * @param height The height of the area
+	 * @param depth The depth of the area
+	 */
+	public void registerArea(int x, int y, int z, int width, int height,
+			int depth) {
+		registerArea(new RectangularArea(x, y, z, width, height, depth));
+	}
+
+	/**
+	 * Registers a circular area. See {@link #registerArea(Area)} and {@link CircularArea}
+	 * @param x The X-Coordinate of the center of the area
+	 * @param y The Y-Coordinate of the center of the area
+	 * @param z The Z-Coordinate of the center of the area
+	 * @param radius The radius of the sphere
+	 */
+	public void registerArea(int x, int y, int z, int radius) {
+		registerArea(new CircularArea(x, y, z, radius));
+	}
+
+	/**
+	 * Registers an area with either rectangular or circular shape, depending on the parameter.
+	 * See {@link #registerArea(int, int, int, int)} and {@link #registerArea(int, int, int, int, int, int)}
+	 * @param object The JS-Object holding the area information
+	 */
+	public void registerArea(ScriptObject object) {
+		if (object.has("radius")) {
+			registerArea(object.getInt("x"), object.getInt("y"),
+					object.getInt("z"), object.getInt("radius"));
+		} else if (object.has("rad_sq")) {
+			registerArea(object.getInt("x"), object.getInt("y"),
+					object.getInt("z"),
+					(int) Math.sqrt(object.getInt("radius")));
+		} else {
+			registerArea(object.getInt("x"), object.getInt("y"),
+					object.getInt("z"), object.getInt("width"),
+					object.getInt("height"), object.getInt("depth"));
+		}
 	}
 
 	public void move(String transform) {
@@ -339,6 +402,10 @@ public class ScriptInterface {
 			player = null;
 		}
 		this.sender = sender;
+	}
+
+	public void log(Object o) {
+		log(o == null ? "null" : o.toString() + " [" + o.getClass() + "]");
 	}
 
 	public ScriptInterface(MainPlugin plugin) {

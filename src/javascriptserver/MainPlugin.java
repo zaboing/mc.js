@@ -4,7 +4,6 @@ import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.FileWriter;
@@ -15,27 +14,32 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
+import javax.script.Bindings;
+import javax.script.ScriptContext;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 import javax.script.ScriptException;
+import javax.script.SimpleScriptContext;
 
 import org.bukkit.Material;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
+import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import scripts.ScriptInterface;
+import events.BukkitListener;
 
 public class MainPlugin extends JavaPlugin {
 
 	private ScriptEngineManager factory;
 	private ScriptEngine javaScript;
 	private HashMap<String, File> aliases;
-	
+
 	private Material block = Material.STONE;
 	private Material light = Material.GLOWSTONE;
 	private Material clear = Material.AIR;
-	
+
 	public Material getBlock() {
 		return block;
 	}
@@ -60,11 +64,6 @@ public class MainPlugin extends JavaPlugin {
 		this.clear = clear;
 	}
 
-	class Event {
-		private String file;
-		private String function;
-	}
-
 	@SuppressWarnings("unchecked")
 	public void onEnable() {
 		ScriptInterface.server = getServer();
@@ -80,17 +79,22 @@ public class MainPlugin extends JavaPlugin {
 			aliases = new HashMap<>();
 		else {
 			try {
-				ObjectInputStream ois = new ObjectInputStream(new FileInputStream(db));
+				ObjectInputStream ois = new ObjectInputStream(
+						new FileInputStream(db));
 				aliases = (HashMap<String, File>) ois.readObject();
 				ois.close();
 			} catch (IOException | ClassNotFoundException e) {
 				execute("$.broadcast(Error while loading Alias DB");
 			}
-			
+
 		}
+		getServer().getPluginManager().registerEvents(new BukkitListener(),
+				this);
 	}
 
 	public void onDisable() {
+		BukkitListener.areaEnterListeners.clear();
+		BukkitListener.areas.clear();
 		try {
 			ObjectOutputStream oos = new ObjectOutputStream(
 					new FileOutputStream("plugins/jsserver.obj"));
@@ -190,7 +194,8 @@ public class MainPlugin extends JavaPlugin {
 						aliases.put(alias, f);
 						sender.sendMessage("[INFO] Added alias <" + alias
 								+ "> for file <" + file + ">");
-						sender.sendMessage("[INFO] State: " + (f.exists() ? " §aOK§r" : "§cFAIL§r"));
+						sender.sendMessage("[INFO] State: "
+								+ (f.exists() ? " §aOK§r" : "§cFAIL§r"));
 						break;
 					}
 				}
@@ -240,7 +245,7 @@ public class MainPlugin extends JavaPlugin {
 							e.printStackTrace();
 						}
 						Object ret = execute(input.toString(), sender);
-						if(ret != null)
+						if (ret != null)
 							sender.sendMessage(ret.toString());
 						return true;
 					}
@@ -248,7 +253,11 @@ public class MainPlugin extends JavaPlugin {
 			}
 			sender.sendMessage("Available Aliases:");
 			for (String s : aliases.keySet()) {
-				sender.sendMessage((aliases.get(s).exists() ? "[ §aOK§r ] " : "[§cFAIL§r] ") + s + " - " + aliases.get(s).getName());
+				sender.sendMessage((aliases.get(s).exists() ? "[ §aOK§r ] "
+						: "[§cFAIL§r] ")
+						+ s
+						+ " - "
+						+ aliases.get(s).getName());
 			}
 		}
 		return false;
@@ -262,22 +271,28 @@ public class MainPlugin extends JavaPlugin {
 			return null;
 		}
 	}
-	
+
 	public Object execute(String script, CommandSender sender) {
 		try {
-			ScriptInterface in = (ScriptInterface) javaScript.get("$");
+			// Put individual context for every script
+			ScriptContext context = new SimpleScriptContext();
+			Bindings bindings = context.getBindings(ScriptContext.ENGINE_SCOPE);
+			ScriptInterface in = new ScriptInterface(this);
 			in.setSender(sender);
-			Object tmp = javaScript.eval(script);
-			in.setSender(null);
+			if (sender instanceof Player) {
+				in.player = (Player) sender;
+			}
+			bindings.put("$", in);
+			Object tmp = javaScript.eval(script, context);
 			return tmp;
 		} catch (ScriptException e) {
 			e.printStackTrace();
 			return null;
 		}
 	}
-	
+
 	public HashMap<String, File> getAliases() {
 		return aliases;
 	}
-	
+
 }
