@@ -3,6 +3,7 @@ package scripts;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
+import java.util.function.Consumer;
 
 import javascriptserver.Area;
 import javascriptserver.CircularArea;
@@ -19,7 +20,11 @@ import org.bukkit.entity.Player;
 import scripts.BlockSelection.Block;
 import events.AreaEnterListener;
 import events.AreaExitListener;
+import events.AreaMoveListener;
 import events.BukkitListener;
+import events.Event;
+import events.EventType;
+import events.GenericListener;
 
 public class ScriptInterface {
 
@@ -262,6 +267,10 @@ public class ScriptInterface {
 	public void addAreaExitListener(AreaExitListener listener) {
 		BukkitListener.areaExitListeners.add(listener);
 	}
+	
+	public void addAreaMoveListener(AreaMoveListener listener) {
+		BukkitListener.areaMoveListeners.add(listener);
+	}
 
 	/**
 	 * Registers an area to be used by the global event handler.
@@ -401,6 +410,15 @@ public class ScriptInterface {
 	public void log(Object o) {
 		log(o == null ? "null" : o.toString() + " [" + o.getClass() + "]");
 	}
+	
+	public void on(EventType type, Consumer<Event> listener) {
+		BukkitListener.genericListeners.get(type).add(new GenericListener(listener));
+	}
+	
+	public void on(String typeDescriptor, Consumer<Event> listener) {
+		on(EventType.byDescriptor(typeDescriptor), listener);
+	}
+	
 
 	public ScriptInterface(MainPlugin plugin) {
 		this.plugin = plugin;

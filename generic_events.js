@@ -14,13 +14,13 @@ var area = {
 
 $.registerArea(area);
 
-$.addAreaEnterListener(function (event) {
+$.on("area.enter", function (event) {
 	if (event.area.isArea(area)) {
 		event.player.sendMessage("You have entered my area!");
 	}
 });
 
-$.addAreaExitListener(function (event) {
+$.on("area.exit", function (event) {
 	if (event.area.isArea(area)) {
 		event.player.sendMessage("You have left my area!");
 	}
