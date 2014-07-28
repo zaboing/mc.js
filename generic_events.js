@@ -25,3 +25,13 @@ $.on("area.exit", function (event) {
 		event.player.sendMessage("You have left my area!");
 	}
 });
+
+/*
+	CENSOR ANY OCCURENCE OF NOTCH (IGNORE CASE)
+*/
+
+$.on("player.chat", function (event) {
+	if (event.message.toLowerCase().contains("notch")) {
+		event.cancel();
+	}
+});

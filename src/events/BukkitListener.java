@@ -12,6 +12,7 @@ import org.bukkit.Location;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
+import org.bukkit.event.player.AsyncPlayerChatEvent;
 import org.bukkit.event.player.PlayerMoveEvent;
 
 public class BukkitListener implements Listener {
@@ -21,6 +22,8 @@ public class BukkitListener implements Listener {
 	public static final Set<AreaEnterListener> areaEnterListeners = new HashSet<AreaEnterListener>();
 	public static final Set<AreaExitListener> areaExitListeners = new HashSet<AreaExitListener>();
 	public static final Set<AreaMoveListener> areaMoveListeners = new HashSet<AreaMoveListener>();
+
+	public static final Set<PlayerChatListener> playerChatListeners = new HashSet<PlayerChatListener>();
 
 	public static final Map<EventType, Set<GenericListener>> genericListeners = new HashMap<EventType, Set<GenericListener>>();
 
@@ -65,9 +68,28 @@ public class BukkitListener implements Listener {
 			}
 		}
 	}
-	
+
+	@EventHandler
+	public void playerChat(AsyncPlayerChatEvent event) {
+		final ChatEvent chatEvent = new ChatEvent(event);
+
+		playerChatListeners.forEach(listener -> listener
+				.onPlayerChat(chatEvent));
+		notifyGenerics(chatEvent);
+	}
+
 	private void notifyGenerics(Event event) {
-		genericListeners.get(event.eventType).forEach(listener -> listener.onEvent(event));
+		genericListeners.get(event.eventType).forEach(
+				listener -> listener.onEvent(event));
+	}
+	
+	public static void cleanUp() {
+		areas.clear();
+		genericListeners.clear();
+		areaEnterListeners.clear();
+		areaExitListeners.clear();
+		areaMoveListeners.clear();
+		playerChatListeners.clear();
 	}
 
 	static {

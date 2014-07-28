@@ -3,7 +3,7 @@ package events;
 import java.util.Arrays;
 
 public enum EventType {
-	AREA_ENTER("area.enter"), AREA_EXIT("area.exit"), AREA_MOVE("area.move");
+	AREA_ENTER("area.enter"), AREA_EXIT("area.exit"), AREA_MOVE("area.move"), PLAYER_CHAT("player.chat");
 
 	public String descriptor;
 

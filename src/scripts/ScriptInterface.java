@@ -260,14 +260,29 @@ public class ScriptInterface {
 		plugin.setLight(Material.getMaterial(block));
 	}
 
+	/**
+	 * @deprecated Use on("area.enter", function(event) {}) instead
+	 * @param listener The listener (Nashorn casts JS-methods to interfaces)
+	 */
+	@Deprecated
 	public void addAreaEnterListener(AreaEnterListener listener) {
 		BukkitListener.areaEnterListeners.add(listener);
 	}
 	
+	/**
+	 * @deprecated Use on("area.exit", function(event) {}) instead
+	 * @param listener The listener (Nashorn casts JS-methods to interfaces)
+	 */
+	@Deprecated
 	public void addAreaExitListener(AreaExitListener listener) {
 		BukkitListener.areaExitListeners.add(listener);
 	}
 	
+	/**
+	 * @deprecated Use on("area.move", function(event) {}) instead
+	 * @param listener The listener (Nashorn casts JS-methods to interfaces)
+	 */
+	@Deprecated
 	public void addAreaMoveListener(AreaMoveListener listener) {
 		BukkitListener.areaMoveListeners.add(listener);
 	}
