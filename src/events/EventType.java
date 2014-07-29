@@ -12,8 +12,6 @@ public enum EventType {
 	}
 
 	public static EventType byDescriptor(String descriptor) {
-		return Arrays.asList(EventType.values()).stream()
-				.filter(type -> type.descriptor.equals(descriptor)).findFirst()
-				.get();
+		return Arrays.asList(EventType.values()).stream().filter(type -> type.descriptor.equals(descriptor)).findFirst().get();
 	}
 }

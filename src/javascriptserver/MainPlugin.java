@@ -24,10 +24,10 @@ import javax.script.SimpleScriptContext;
 import org.bukkit.Material;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
-import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
 
-import scripts.ScriptInterface;
+import scripts.GlobalScriptInterface;
+import scripts.LocalScriptInterface;
 import events.BukkitListener;
 
 public class MainPlugin extends JavaPlugin {
@@ -35,6 +35,8 @@ public class MainPlugin extends JavaPlugin {
 	private ScriptEngineManager factory;
 	private ScriptEngine javaScript;
 	private HashMap<String, File> aliases;
+
+	private ScriptContext globalContext;
 
 	private Material block = Material.STONE;
 	private Material light = Material.GLOWSTONE;
@@ -66,10 +68,11 @@ public class MainPlugin extends JavaPlugin {
 
 	@SuppressWarnings("unchecked")
 	public void onEnable() {
-		ScriptInterface.server = getServer();
+		GlobalScriptInterface.server = getServer();
+		globalContext = new SimpleScriptContext();
 		factory = new ScriptEngineManager(getClass().getClassLoader());
 		javaScript = factory.getEngineByName("JavaScript");
-		javaScript.put("$", new ScriptInterface(this));
+		globalContext.getBindings(ScriptContext.ENGINE_SCOPE).put("$", new GlobalScriptInterface(this));
 		// NASHORN FIX FOR RHINO METHODS
 		execute("load(\"nashorn:mozilla_compat.js\");");
 		execute("importClass(Packages.org.bukkit.Server);");
@@ -79,8 +82,7 @@ public class MainPlugin extends JavaPlugin {
 			aliases = new HashMap<>();
 		else {
 			try {
-				ObjectInputStream ois = new ObjectInputStream(
-						new FileInputStream(db));
+				ObjectInputStream ois = new ObjectInputStream(new FileInputStream(db));
 				aliases = (HashMap<String, File>) ois.readObject();
 				ois.close();
 			} catch (IOException | ClassNotFoundException e) {
@@ -88,15 +90,13 @@ public class MainPlugin extends JavaPlugin {
 			}
 
 		}
-		getServer().getPluginManager().registerEvents(new BukkitListener(),
-				this);
+		getServer().getPluginManager().registerEvents(new BukkitListener(), this);
 	}
 
 	public void onDisable() {
 		BukkitListener.cleanUp();
 		try {
-			ObjectOutputStream oos = new ObjectOutputStream(
-					new FileOutputStream("plugins/jsserver.obj"));
+			ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream("plugins/jsserver.obj"));
 			oos.writeObject(aliases);
 			oos.flush();
 			oos.close();
@@ -106,8 +106,7 @@ public class MainPlugin extends JavaPlugin {
 		execute("$.broadcast('�8�lDisabled JavaScript.�l');");
 	}
 
-	public boolean onCommand(CommandSender sender, Command cmd, String label,
-			String[] args) {
+	public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
 		if (cmd.getName().equalsIgnoreCase("javascript")) {
 			List<String> realArgs = new ArrayList<String>();
 
@@ -143,63 +142,71 @@ public class MainPlugin extends JavaPlugin {
 			boolean consoleOutput = false;
 			boolean fileOutput = false;
 
+			boolean global = false;
+
 			for (int i = 0; i < realArgs.size(); i++) {
 				String arg = realArgs.get(i);
 				if (arg.startsWith("-")) {
 					switch (arg.substring(1)) {
-					case "d":
-						input.append(realArgs.get(i + 1));
-						break;
+						case "d":
+							input.append(realArgs.get(i + 1));
+							break;
 
-					case "f":
-						try (BufferedReader reader = new BufferedReader(
-								new FileReader(realArgs.get(i + 1)))) {
-							char[] cbuf = new char[1024];
-							int len;
-							while ((len = reader.read(cbuf)) != -1) {
-								input.append(cbuf, 0, len);
+						case "f":
+							try (BufferedReader reader = new BufferedReader(new FileReader(realArgs.get(i + 1)))) {
+								char[] cbuf = new char[1024];
+								int len;
+								while ((len = reader.read(cbuf)) != -1) {
+									input.append(cbuf, 0, len);
+								}
+							} catch (IOException e) {
+								e.printStackTrace();
 							}
-						} catch (IOException e) {
-							e.printStackTrace();
-						}
-						fileOutput = true;
-						break;
+							break;
 
-					case "o":
-						try {
-							output = new BufferedWriter(new FileWriter(
-									realArgs.get(i + 1)));
-						} catch (IOException e) {
-							e.printStackTrace();
-						}
-						break;
+						case "o":
+							try {
+								output = new BufferedWriter(new FileWriter(realArgs.get(i + 1)));
+							} catch (IOException e) {
+								e.printStackTrace();
+							}
+							fileOutput = true;
+							break;
 
-					case "c":
-						consoleOutput = true;
-						break;
-					case "a":
-						String file,
-						alias;
-						File f = null;
-						file = realArgs.get(i + 2);
-						alias = realArgs.get(i + 1);
-						f = new File(file);
-						if (!f.exists()) {
-							sender.sendMessage("[§cWARN§r] Target for alias not existing, alias may not work!");
-						}
-						if (aliases.containsKey(alias.toLowerCase())) {
-							sender.sendMessage("[§cWARN§r] Overwriting already existing alias!");
-						}
-						aliases.put(alias, f);
-						sender.sendMessage("[INFO] Added alias <" + alias
-								+ "> for file <" + file + ">");
-						sender.sendMessage("[INFO] State: "
-								+ (f.exists() ? " §aOK§r" : "§cFAIL§r"));
-						break;
+						case "c":
+							consoleOutput = true;
+							break;
+						case "a":
+							String file,
+							alias;
+							File f = null;
+							file = realArgs.get(i + 2);
+							alias = realArgs.get(i + 1);
+							f = new File(file);
+							if (!f.exists()) {
+								sender.sendMessage("[§cWARN§r] Target for alias not existing, alias may not work!");
+							}
+							if (aliases.containsKey(alias.toLowerCase())) {
+								sender.sendMessage("[§cWARN§r] Overwriting already existing alias!");
+							}
+							aliases.put(alias, f);
+							sender.sendMessage("[INFO] Added alias <" + alias + "> for file <" + file + ">");
+							sender.sendMessage("[INFO] State: " + (f.exists() ? " §aOK§r" : "§cFAIL§r"));
+							break;
+						case "-global":
+							global = true;
+							break;
 					}
 				}
 			}
-			Object ret = execute(input.toString(), sender);
+			Object ret;
+			if (global) {
+				ret = execute(input.toString());
+				sender.sendMessage("Executed global script");
+			} else {
+				ret = execute(input.toString(), sender);
+			}
+
 			if (ret != null) {
 				if (consoleOutput) {
 					sender.sendMessage(ret.toString());
@@ -233,8 +240,7 @@ public class MainPlugin extends JavaPlugin {
 						return false;
 					} else {
 						StringBuilder input = new StringBuilder();
-						try (BufferedReader reader = new BufferedReader(
-								new FileReader(f))) {
+						try (BufferedReader reader = new BufferedReader(new FileReader(f))) {
 							char[] cbuf = new char[1024];
 							int len;
 							while ((len = reader.read(cbuf)) != -1) {
@@ -252,11 +258,7 @@ public class MainPlugin extends JavaPlugin {
 			}
 			sender.sendMessage("Available Aliases:");
 			for (String s : aliases.keySet()) {
-				sender.sendMessage((aliases.get(s).exists() ? "[ §aOK§r ] "
-						: "[§cFAIL§r] ")
-						+ s
-						+ " - "
-						+ aliases.get(s).getName());
+				sender.sendMessage((aliases.get(s).exists() ? "[ §aOK§r ] " : "[§cFAIL§r] ") + s + " - " + aliases.get(s).getName());
 			}
 		}
 		return false;
@@ -264,7 +266,8 @@ public class MainPlugin extends JavaPlugin {
 
 	public Object execute(String script) {
 		try {
-			return javaScript.eval(script);
+			// Use global context
+			return javaScript.eval(script, globalContext);
 		} catch (ScriptException e) {
 			e.printStackTrace();
 			return null;
@@ -276,11 +279,9 @@ public class MainPlugin extends JavaPlugin {
 			// Put individual context for every script
 			ScriptContext context = new SimpleScriptContext();
 			Bindings bindings = context.getBindings(ScriptContext.ENGINE_SCOPE);
-			ScriptInterface in = new ScriptInterface(this);
+			bindings.putAll(globalContext.getBindings(ScriptContext.ENGINE_SCOPE));
+			LocalScriptInterface in = new LocalScriptInterface(this);
 			in.setSender(sender);
-			if (sender instanceof Player) {
-				in.player = (Player) sender;
-			}
 			bindings.put("$", in);
 			Object tmp = javaScript.eval(script, context);
 			return tmp;

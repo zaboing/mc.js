@@ -7,9 +7,9 @@ public class ChatEvent extends Event {
 
 	public Player player;
 	public String message;
-	
+
 	private AsyncPlayerChatEvent event;
-	
+
 	public ChatEvent(AsyncPlayerChatEvent event) {
 		super(EventType.PLAYER_CHAT);
 		this.player = event.getPlayer();

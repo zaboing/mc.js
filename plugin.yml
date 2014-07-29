@@ -1,4 +1,4 @@
-name: JavaScript Plugin
+name: JavaScriptPlugin
 main: javascriptserver.MainPlugin
 version: Alpha
 

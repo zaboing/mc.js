@@ -9,45 +9,45 @@ import javascriptserver.MainPlugin;
 
 public class BlockSelection {
 
-	private ArrayList<Block> blocks;
+	private ArrayList<BlockInfo> blocks;
 	private MainPlugin plugin;
 	private World world;
-	
+
 	public BlockSelection(MainPlugin plugin, World world) {
 		this.plugin = plugin;
 		this.world = world;
 		this.blocks = new ArrayList<>();
 	}
-	
+
 	public void fill() {
-		for (Block block : blocks) {
+		for (BlockInfo block : blocks) {
 			world.getBlockAt(block.X, block.Y, block.Z).setType(plugin.getBlock());
 		}
 	}
-	
+
 	public void fill(String material) {
-		for (Block block : blocks) {
+		for (BlockInfo block : blocks) {
 			world.getBlockAt(block.X, block.Y, block.Z).setType(Material.getMaterial(material));
 		}
 	}
-	
+
 	public void fillLight() {
-		for (Block block : blocks) {
+		for (BlockInfo block : blocks) {
 			world.getBlockAt(block.X, block.Y, block.Z).setType(plugin.getLight());
 		}
 	}
-	
+
 	public void clear() {
-		for (Block block : blocks) {
+		for (BlockInfo block : blocks) {
 			world.getBlockAt(block.X, block.Y, block.Z).setType(plugin.getClear());
 		}
 	}
-	
-	public void addBlock(Block b) {
+
+	public void addBlock(BlockInfo b) {
 		blocks.add(b);
 	}
-	
-	public static class Block {
+
+	public static class BlockInfo {
 		public int X, Y, Z;
 
 		@Override
@@ -60,7 +60,7 @@ public class BlockSelection {
 	public String toString() {
 		return "BlockSelection [blocks=" + blocks + "]";
 	}
-	
+
 	public int getBlockCount() {
 		return blocks.size();
 	}

@@ -26,9 +26,7 @@ public class RectangularArea extends Area {
 	}
 
 	public boolean isInArea(int x, int y, int z) {
-		return x >= this.x && x <= this.x + this.width && y >= this.y
-				&& y <= this.y + this.height && z >= this.z
-				&& z <= this.z + this.depth;
+		return x >= this.x && x <= this.x + this.width && y >= this.y && y <= this.y + this.height && z >= this.z && z <= this.z + this.depth;
 	}
 
 	public boolean equals(Object o) {
@@ -37,9 +35,7 @@ public class RectangularArea extends Area {
 		}
 		if (o instanceof RectangularArea) {
 			RectangularArea area = (RectangularArea) o;
-			return area.x == this.x && area.y == this.y && area.z == this.z
-					&& area.width == this.width && area.height == this.height
-					&& area.depth == this.depth;
+			return area.x == this.x && area.y == this.y && area.z == this.z && area.width == this.width && area.height == this.height && area.depth == this.depth;
 		} else {
 			return false;
 		}
