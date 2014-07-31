@@ -6,7 +6,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-import javascriptserver.Area;
+import mcjs.Area;
 
 import org.bukkit.Location;
 import org.bukkit.entity.Player;

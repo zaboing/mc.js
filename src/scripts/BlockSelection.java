@@ -2,10 +2,10 @@ package scripts;
 
 import java.util.ArrayList;
 
+import mcjs.MainPlugin;
+
 import org.bukkit.Material;
 import org.bukkit.World;
-
-import javascriptserver.MainPlugin;
 
 public class BlockSelection {
 

@@ -1,6 +1,6 @@
 package events;
 
-import javascriptserver.Area;
+import mcjs.Area;
 
 import org.bukkit.entity.Player;
 

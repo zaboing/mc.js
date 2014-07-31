@@ -1,6 +1,6 @@
 package scripts;
 
-import javascriptserver.MainPlugin;
+import mcjs.MainPlugin;
 
 import org.bukkit.Location;
 import org.bukkit.command.CommandSender;

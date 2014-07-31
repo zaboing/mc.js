@@ -1,4 +1,4 @@
-package javascriptserver;
+package mcjs;
 
 public class RectangularArea extends Area {
 
@@ -29,13 +29,13 @@ public class RectangularArea extends Area {
 		return x >= this.x && x <= this.x + this.width && y >= this.y && y <= this.y + this.height && z >= this.z && z <= this.z + this.depth;
 	}
 
-	public boolean equals(Object o) {
-		if (o == null) {
+	public boolean isArea(Area area) {
+		if (area == null) {
 			return false;
 		}
-		if (o instanceof RectangularArea) {
-			RectangularArea area = (RectangularArea) o;
-			return area.x == this.x && area.y == this.y && area.z == this.z && area.width == this.width && area.height == this.height && area.depth == this.depth;
+		if (area instanceof RectangularArea) {
+			RectangularArea a = (RectangularArea) area;
+			return a.x == this.x && a.y == this.y && a.z == this.z && a.width == this.width && a.height == this.height && a.depth == this.depth;
 		} else {
 			return false;
 		}

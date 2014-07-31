@@ -1,4 +1,4 @@
-package javascriptserver;
+package mcjs;
 
 public class CircularArea extends Area {
 
@@ -22,13 +22,13 @@ public class CircularArea extends Area {
 		return (dx * dx + dy * dy + dz * dz) <= rad_sq;
 	}
 
-	public boolean equals(Object o) {
-		if (o == null) {
+	public boolean isArea(Area area) {
+		if (area == null) {
 			return false;
 		}
-		if (o instanceof CircularArea) {
-			CircularArea area = (CircularArea) o;
-			return area.x == this.x && area.y == this.y && area.z == this.z && area.rad_sq == this.rad_sq;
+		if (area instanceof CircularArea) {
+			CircularArea a = (CircularArea) area;
+			return a.x == this.x && a.y == this.y && a.z == this.z && a.rad_sq == this.rad_sq;
 		} else {
 			return false;
 		}

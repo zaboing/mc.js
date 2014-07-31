@@ -1,4 +1,4 @@
-package javascriptserver;
+package mcjs;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -28,6 +28,7 @@ import org.bukkit.plugin.java.JavaPlugin;
 
 import scripts.GlobalScriptInterface;
 import scripts.LocalScriptInterface;
+import wrappers.AreaWrapper;
 import events.BukkitListener;
 
 public class MainPlugin extends JavaPlugin {
@@ -72,7 +73,9 @@ public class MainPlugin extends JavaPlugin {
 		globalContext = new SimpleScriptContext();
 		factory = new ScriptEngineManager(getClass().getClassLoader());
 		javaScript = factory.getEngineByName("JavaScript");
-		globalContext.getBindings(ScriptContext.ENGINE_SCOPE).put("$", new GlobalScriptInterface(this));
+		Bindings globalBindings = globalContext.getBindings(ScriptContext.ENGINE_SCOPE);
+		globalBindings.put("$", new GlobalScriptInterface(this));
+		globalBindings.put("Area", new AreaWrapper());
 		// NASHORN FIX FOR RHINO METHODS
 		execute("load(\"nashorn:mozilla_compat.js\");");
 		execute("importClass(Packages.org.bukkit.Server);");

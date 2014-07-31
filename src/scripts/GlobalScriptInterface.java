@@ -5,11 +5,11 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.util.function.Consumer;
 
-import javascriptserver.Area;
-import javascriptserver.CircularArea;
-import javascriptserver.MainPlugin;
-import javascriptserver.RectangularArea;
 import jdk.nashorn.internal.runtime.ScriptObject;
+import mcjs.Area;
+import mcjs.CircularArea;
+import mcjs.MainPlugin;
+import mcjs.RectangularArea;
 
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -372,6 +372,10 @@ public class GlobalScriptInterface {
 
 	public void on(String typeDescriptor, Consumer<Event> listener) {
 		on(EventType.byDescriptor(typeDescriptor), listener);
+	}
+	
+	public Player getPlayer(String name) {
+		return server.getPlayer(name);
 	}
 
 	public GlobalScriptInterface(MainPlugin plugin) {

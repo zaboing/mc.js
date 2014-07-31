@@ -1,5 +1,5 @@
 name: JavaScriptPlugin
-main: javascriptserver.MainPlugin
+main: mcjs.MainPlugin
 version: Alpha
 
 commands:
