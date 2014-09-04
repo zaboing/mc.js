@@ -3,6 +3,7 @@ package scripts;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
+import java.util.HashSet;
 import java.util.function.Consumer;
 
 import jdk.nashorn.internal.runtime.ScriptObject;
@@ -192,11 +193,11 @@ public class GlobalScriptInterface {
 		}
 		return bs;
 	}
-	
+
 	public void spawnEntity(Location location, EntityType type) {
 		location.getWorld().spawnEntity(location, type);
 	}
-	
+
 	public void spawnEntity(double x, double y, double z, EntityType type) {
 		spawnEntity(new Location(server.getWorld("world"), x, y, z), type);
 	}
@@ -244,6 +245,17 @@ public class GlobalScriptInterface {
 	@Deprecated
 	public void addAreaMoveListener(AreaMoveListener listener) {
 		BukkitListener.areaMoveListeners.add(listener);
+	}
+
+	public void addBlockClickListener(Location location, GenericListener listener) {
+		if (!BukkitListener.blockClickListeners.containsKey(location)) {
+			BukkitListener.blockClickListeners.put(location, new HashSet<GenericListener>());
+		}
+		BukkitListener.blockClickListeners.get(location).add(listener);
+	}
+
+	public void addBlockClickListener(ScriptObject location, Consumer<Event> listener) {
+		addBlockClickListener(new Location(server.getWorld("world"), location.getDouble("x"), location.getDouble("y"), location.getDouble("z")), new GenericListener(listener));
 	}
 
 	/**
@@ -367,13 +379,14 @@ public class GlobalScriptInterface {
 	}
 
 	public void on(EventType type, Consumer<Event> listener) {
-		BukkitListener.genericListeners.get(type).add(new GenericListener(listener));
+		BukkitListener.on(type, listener);
 	}
 
 	public void on(String typeDescriptor, Consumer<Event> listener) {
 		on(EventType.byDescriptor(typeDescriptor), listener);
 	}
-	
+
+	@SuppressWarnings("deprecation")
 	public Player getPlayer(String name) {
 		return server.getPlayer(name);
 	}

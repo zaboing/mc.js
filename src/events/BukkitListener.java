@@ -5,6 +5,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Consumer;
 
 import mcjs.Area;
 
@@ -12,7 +13,9 @@ import org.bukkit.Location;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
+import org.bukkit.event.block.SignChangeEvent;
 import org.bukkit.event.player.AsyncPlayerChatEvent;
+import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerMoveEvent;
 
 public class BukkitListener implements Listener {
@@ -24,6 +27,8 @@ public class BukkitListener implements Listener {
 	public static final Set<AreaMoveListener> areaMoveListeners = new HashSet<AreaMoveListener>();
 
 	public static final Set<PlayerChatListener> playerChatListeners = new HashSet<PlayerChatListener>();
+
+	public static final Map<Location, Set<GenericListener>> blockClickListeners = new HashMap<Location, Set<GenericListener>>();
 
 	public static final Map<EventType, Set<GenericListener>> genericListeners = new HashMap<EventType, Set<GenericListener>>();
 
@@ -41,19 +46,19 @@ public class BukkitListener implements Listener {
 				continue;
 			}
 			if (!isFrom && isTo) {
-				final AreaEvent areaEvent = new AreaEvent(area, player, EventType.AREA_ENTER);
+				final AreaEvent areaEvent = new AreaEvent(area, event, EventType.AREA_ENTER);
 				areaEnterListeners.forEach(listener -> listener.onAreaEnter(areaEvent));
 				notifyGenerics(areaEvent);
 				continue;
 			}
 			if (isFrom && !isTo) {
-				final AreaEvent areaEvent = new AreaEvent(area, player, EventType.AREA_EXIT);
+				final AreaEvent areaEvent = new AreaEvent(area, event, EventType.AREA_EXIT);
 				areaExitListeners.forEach(listener -> listener.onAreaExit(areaEvent));
 				notifyGenerics(areaEvent);
 				continue;
 			}
 			if (isFrom && isTo) {
-				final AreaEvent areaEvent = new AreaEvent(area, player, EventType.AREA_MOVE);
+				final AreaEvent areaEvent = new AreaEvent(area, event, EventType.AREA_MOVE);
 				areaMoveListeners.forEach(listener -> listener.onMoveInArea(areaEvent));
 				notifyGenerics(areaEvent);
 				continue;
@@ -68,6 +73,24 @@ public class BukkitListener implements Listener {
 		playerChatListeners.forEach(listener -> listener.onPlayerChat(chatEvent));
 		notifyGenerics(chatEvent);
 	}
+	
+	@EventHandler
+	public void signPlaced(SignChangeEvent event) {
+		final SignEvent signEvent = new SignEvent(event);
+		
+		notifyGenerics(signEvent);
+	}
+	
+	@EventHandler
+	public void playerClick(PlayerInteractEvent event) {
+		final ClickEvent clickEvent = new ClickEvent(event);
+
+		if (event.hasBlock() && blockClickListeners.containsKey(event.getClickedBlock().getLocation())) {
+			blockClickListeners.get(event.getClickedBlock().getLocation()).forEach(listener -> listener.onEvent(clickEvent));
+		}
+		
+		notifyGenerics(clickEvent);
+	}
 
 	private void notifyGenerics(Event event) {
 		genericListeners.get(event.eventType).forEach(listener -> listener.onEvent(event));
@@ -80,9 +103,14 @@ public class BukkitListener implements Listener {
 		areaExitListeners.clear();
 		areaMoveListeners.clear();
 		playerChatListeners.clear();
+		blockClickListeners.clear();
 	}
 
 	static {
 		Arrays.asList(EventType.values()).stream().forEach(type -> genericListeners.put(type, new HashSet<GenericListener>()));
+	}
+
+	public static void on(EventType type, Consumer<Event> listener) {
+		genericListeners.get(type).add(new GenericListener(listener));
 	}
 }

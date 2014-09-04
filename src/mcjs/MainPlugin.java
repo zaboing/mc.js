@@ -30,6 +30,9 @@ import scripts.GlobalScriptInterface;
 import scripts.LocalScriptInterface;
 import wrappers.AreaWrapper;
 import events.BukkitListener;
+import events.Event;
+import events.EventType;
+import events.SignEvent;
 
 public class MainPlugin extends JavaPlugin {
 
@@ -94,6 +97,23 @@ public class MainPlugin extends JavaPlugin {
 
 		}
 		getServer().getPluginManager().registerEvents(new BukkitListener(), this);
+		BukkitListener.on(EventType.SIGN_CHANGE, this::signChanged);
+	}
+
+	private void signChanged(Event event) {
+		if (event instanceof SignEvent) {
+			SignEvent signEvent = (SignEvent) event;
+			String text = String.join("", signEvent.lines).trim();
+			if (text.startsWith("/js ")) {
+				List<String> log = new ArrayList<String>();
+				Object ret = executeCommand(getRealArgs(text.substring(4).trim().split(" ")), signEvent.player, log);
+				log.forEach(line -> signEvent.player.sendMessage(line));
+				signEvent.setLine(0, "");
+				signEvent.setLine(1, String.valueOf(ret));
+				signEvent.setLine(2, "");
+				signEvent.setLine(3, "");
+			}
+		}
 	}
 
 	public void onDisable() {
@@ -108,128 +128,145 @@ public class MainPlugin extends JavaPlugin {
 		}
 		execute("$.broadcast('�8�lDisabled JavaScript.�l');");
 	}
+	
+	private List<String> getRealArgs(String... args) {
+		List<String> realArgs = new ArrayList<String>();
 
-	public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
-		if (cmd.getName().equalsIgnoreCase("javascript")) {
-			List<String> realArgs = new ArrayList<String>();
+		String current = new String();
 
-			String current = new String();
+		boolean inString = false;
 
-			boolean inString = false;
-
-			for (int i = 0; i < args.length; i++) {
-				for (char c : args[i].toCharArray()) {
-					if (c == '"') {
-						inString = !inString;
-					} else {
-						current += c;
-					}
-				}
-				if (!inString) {
-					realArgs.add(current);
-					current = new String();
+		for (int i = 0; i < args.length; i++) {
+			for (char c : args[i].toCharArray()) {
+				if (c == '"') {
+					inString = !inString;
 				} else {
-					current += " ";
+					current += c;
 				}
 			}
-			if (!current.trim().isEmpty()) {
+			if (!inString) {
 				realArgs.add(current);
-			}
-
-			if (realArgs.isEmpty()) {
-				return false;
-			}
-
-			StringBuilder input = new StringBuilder();
-			BufferedWriter output = null;
-			boolean consoleOutput = false;
-			boolean fileOutput = false;
-
-			boolean global = false;
-
-			for (int i = 0; i < realArgs.size(); i++) {
-				String arg = realArgs.get(i);
-				if (arg.startsWith("-")) {
-					switch (arg.substring(1)) {
-						case "d":
-							input.append(realArgs.get(i + 1));
-							break;
-
-						case "f":
-							try (BufferedReader reader = new BufferedReader(new FileReader(realArgs.get(i + 1)))) {
-								char[] cbuf = new char[1024];
-								int len;
-								while ((len = reader.read(cbuf)) != -1) {
-									input.append(cbuf, 0, len);
-								}
-							} catch (IOException e) {
-								e.printStackTrace();
-							}
-							break;
-
-						case "o":
-							try {
-								output = new BufferedWriter(new FileWriter(realArgs.get(i + 1)));
-							} catch (IOException e) {
-								e.printStackTrace();
-							}
-							fileOutput = true;
-							break;
-
-						case "c":
-							consoleOutput = true;
-							break;
-						case "a":
-							String file,
-							alias;
-							File f = null;
-							file = realArgs.get(i + 2);
-							alias = realArgs.get(i + 1);
-							f = new File(file);
-							if (!f.exists()) {
-								sender.sendMessage("[§cWARN§r] Target for alias not existing, alias may not work!");
-							}
-							if (aliases.containsKey(alias.toLowerCase())) {
-								sender.sendMessage("[§cWARN§r] Overwriting already existing alias!");
-							}
-							aliases.put(alias, f);
-							sender.sendMessage("[INFO] Added alias <" + alias + "> for file <" + file + ">");
-							sender.sendMessage("[INFO] State: " + (f.exists() ? " §aOK§r" : "§cFAIL§r"));
-							break;
-						case "-global":
-							global = true;
-							break;
-					}
-				}
-			}
-			Object ret;
-			if (global) {
-				ret = execute(input.toString());
-				sender.sendMessage("Executed global script");
+				current = new String();
 			} else {
-				ret = execute(input.toString(), sender);
+				current += " ";
 			}
+		}
+		if (!current.trim().isEmpty()) {
+			realArgs.add(current);
+		}
+		return realArgs;
+	}
+	
+	/**
+	 * 
+	 * @param realArgs The arguments for the /javascript command
+	 * @return The returned value
+	 */
+	private Object executeCommand(List<String> realArgs, CommandSender sender, List<String> log) {
+		sender.sendMessage(String.join(", ", realArgs));
+		StringBuilder input = new StringBuilder();
+		BufferedWriter output = null;
+		boolean consoleOutput = false;
+		boolean fileOutput = false;
 
-			if (ret != null) {
-				if (consoleOutput) {
-					sender.sendMessage(ret.toString());
-				}
-				if (fileOutput) {
-					try {
-						output.write(ret.toString());
-					} catch (IOException e) {
-						e.printStackTrace();
-					}
+		boolean global = false;
+
+		for (int i = 0; i < realArgs.size(); i++) {
+			String arg = realArgs.get(i);
+			if (arg.startsWith("-")) {
+				switch (arg.substring(1)) {
+					case "d":
+						input.append(realArgs.get(i + 1));
+						break;
+
+					case "f":
+						try (BufferedReader reader = new BufferedReader(new FileReader(realArgs.get(i + 1)))) {
+							char[] cbuf = new char[1024];
+							int len;
+							while ((len = reader.read(cbuf)) != -1) {
+								input.append(cbuf, 0, len);
+							}
+						} catch (IOException e) {
+							e.printStackTrace();
+						}
+						break;
+
+					case "o":
+						try {
+							output = new BufferedWriter(new FileWriter(realArgs.get(i + 1)));
+						} catch (IOException e) {
+							e.printStackTrace();
+						}
+						fileOutput = true;
+						break;
+
+					case "c":
+						consoleOutput = true;
+						break;
+					case "a":
+						String file,
+						alias;
+						File f = null;
+						file = realArgs.get(i + 2);
+						alias = realArgs.get(i + 1);
+						f = new File(file);
+						if (!f.exists()) {
+							log.add("[§cWARN§r] Target for alias not existing, alias may not work!");
+						}
+						if (aliases.containsKey(alias.toLowerCase())) {
+							log.add("[§cWARN§r] Overwriting already existing alias!");
+						}
+						aliases.put(alias, f);
+						log.add("[INFO] Added alias <" + alias + "> for file <" + file + ">");
+						log.add("[INFO] State: " + (f.exists() ? " §aOK§r" : "§cFAIL§r"));
+						break;
+					case "-global":
+						global = true;
+						break;
 				}
 			}
+		}
+		Object ret;
+		if (global) {
+			ret = execute(input.toString());
+		} else {
+			ret = execute(input.toString(), sender);
+		}
 
-			if (output != null) {
+		if (ret != null) {
+			if (consoleOutput) {
+				log.add(ret.toString());
+			}
+			if (fileOutput) {
 				try {
-					output.close();
+					output.write(ret.toString());
 				} catch (IOException e) {
 					e.printStackTrace();
 				}
 			}
+		}
+
+		if (output != null) {
+			try {
+				output.close();
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		}
+		return ret;
+	}
+
+	public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
+		if (cmd.getName().equalsIgnoreCase("javascript")) {
+			List<String> realArgs = getRealArgs(args);
+
+			if (realArgs.isEmpty()) {
+				return false;
+			}
+			
+			List<String> log = new ArrayList<String>();
+			executeCommand(realArgs, sender, log);
+			log.forEach(line -> sender.sendMessage(line));
 
 			return true;
 		} else if (cmd.getName().toLowerCase().startsWith("js")) {
