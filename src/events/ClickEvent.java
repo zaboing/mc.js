@@ -4,7 +4,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.player.PlayerInteractEvent;
 
 public class ClickEvent extends Event {
-	private PlayerInteractEvent event;
+	public PlayerInteractEvent event;
 	
 	public Player player;
 	
