@@ -1,5 +1,6 @@
 package events;
 
-public interface PlayerChatListener {
+public interface PlayerChatListener
+{
 	public void onPlayerChat(ChatEvent event);
 }

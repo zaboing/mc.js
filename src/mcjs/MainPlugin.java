@@ -34,7 +34,8 @@ import events.Event;
 import events.EventType;
 import events.SignEvent;
 
-public class MainPlugin extends JavaPlugin {
+public class MainPlugin extends JavaPlugin
+{
 
 	private ScriptEngineManager factory;
 	private ScriptEngine javaScript;
@@ -46,38 +47,46 @@ public class MainPlugin extends JavaPlugin {
 	private Material light = Material.GLOWSTONE;
 	private Material clear = Material.AIR;
 
-	public Material getBlock() {
+	public Material getBlock()
+	{
 		return block;
 	}
 
-	public void setBlock(Material block) {
+	public void setBlock(Material block)
+	{
 		this.block = block;
 	}
 
-	public Material getLight() {
+	public Material getLight()
+	{
 		return light;
 	}
 
-	public void setLight(Material light) {
+	public void setLight(Material light)
+	{
 		this.light = light;
 	}
 
-	public Material getClear() {
+	public Material getClear()
+	{
 		return clear;
 	}
 
-	public void setClear(Material clear) {
+	public void setClear(Material clear)
+	{
 		this.clear = clear;
 	}
 
 	@SuppressWarnings("unchecked")
-	public void onEnable() {
+	public void onEnable()
+	{
 		GlobalScriptInterface.server = getServer();
 		globalContext = new SimpleScriptContext();
 		factory = new ScriptEngineManager(getClass().getClassLoader());
 		javaScript = factory.getEngineByName("JavaScript");
 		Bindings globalBindings = globalContext.getBindings(ScriptContext.ENGINE_SCOPE);
 		globalBindings.put("$", new GlobalScriptInterface(this));
+		globalBindings.put("server", getServer());
 		globalBindings.put("Area", new AreaWrapper());
 		// NASHORN FIX FOR RHINO METHODS
 		execute("load(\"nashorn:mozilla_compat.js\");");
@@ -85,13 +94,18 @@ public class MainPlugin extends JavaPlugin {
 		execute("$.broadcast('�8�lEnabled JavaScript.�l');");
 		File db = new File("plugins/jsserver.obj");
 		if (!db.exists())
+		{
 			aliases = new HashMap<>();
-		else {
-			try {
+		}
+		else
+		{
+			try
+			{
 				ObjectInputStream ois = new ObjectInputStream(new FileInputStream(db));
 				aliases = (HashMap<String, File>) ois.readObject();
 				ois.close();
-			} catch (IOException | ClassNotFoundException e) {
+			} catch (IOException | ClassNotFoundException e)
+			{
 				execute("$.broadcast(Error while loading Alias DB");
 			}
 
@@ -100,11 +114,14 @@ public class MainPlugin extends JavaPlugin {
 		BukkitListener.on(EventType.SIGN_CHANGE, this::signChanged);
 	}
 
-	private void signChanged(Event event) {
-		if (event instanceof SignEvent) {
+	private void signChanged(Event event)
+	{
+		if (event instanceof SignEvent)
+		{
 			SignEvent signEvent = (SignEvent) event;
 			String text = String.join("", signEvent.lines).trim();
-			if (text.startsWith("/js ")) {
+			if (text.startsWith("/js "))
+			{
 				List<String> log = new ArrayList<String>();
 				Object ret = executeCommand(getRealArgs(text.substring(4).trim().split(" ")), signEvent.player, log);
 				log.forEach(line -> signEvent.player.sendMessage(line));
@@ -116,53 +133,68 @@ public class MainPlugin extends JavaPlugin {
 		}
 	}
 
-	public void onDisable() {
+	public void onDisable()
+	{
 		BukkitListener.cleanUp();
-		try {
+		try
+		{
 			ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream("plugins/jsserver.obj"));
 			oos.writeObject(aliases);
 			oos.flush();
 			oos.close();
-		} catch (IOException e) {
+		} catch (IOException e)
+		{
 			execute("$.broadcast(Error while saving Alias DB");
 		}
 		execute("$.broadcast('�8�lDisabled JavaScript.�l');");
 	}
-	
-	private List<String> getRealArgs(String... args) {
+
+	private List<String> getRealArgs(String... args)
+	{
 		List<String> realArgs = new ArrayList<String>();
 
 		String current = new String();
 
 		boolean inString = false;
 
-		for (int i = 0; i < args.length; i++) {
-			for (char c : args[i].toCharArray()) {
-				if (c == '"') {
+		for (int i = 0; i < args.length; i++)
+		{
+			for (char c : args[i].toCharArray())
+			{
+				if (c == '"')
+				{
 					inString = !inString;
-				} else {
+				}
+				else
+				{
 					current += c;
 				}
 			}
-			if (!inString) {
+			if (!inString)
+			{
 				realArgs.add(current);
 				current = new String();
-			} else {
+			}
+			else
+			{
 				current += " ";
 			}
 		}
-		if (!current.trim().isEmpty()) {
+		if (!current.trim().isEmpty())
+		{
 			realArgs.add(current);
 		}
 		return realArgs;
 	}
-	
+
 	/**
 	 * 
-	 * @param realArgs The arguments for the /javascript command
+	 * @param realArgs
+	 *            The arguments for the /javascript command
 	 * @return The returned value
 	 */
-	private Object executeCommand(List<String> realArgs, CommandSender sender, List<String> log) {
+	private Object executeCommand(List<String> realArgs, CommandSender sender, List<String> log)
+	{
 		sender.sendMessage(String.join(", ", realArgs));
 		StringBuilder input = new StringBuilder();
 		BufferedWriter output = null;
@@ -171,30 +203,38 @@ public class MainPlugin extends JavaPlugin {
 
 		boolean global = false;
 
-		for (int i = 0; i < realArgs.size(); i++) {
+		for (int i = 0; i < realArgs.size(); i++)
+		{
 			String arg = realArgs.get(i);
-			if (arg.startsWith("-")) {
-				switch (arg.substring(1)) {
+			if (arg.startsWith("-"))
+			{
+				switch (arg.substring(1))
+				{
 					case "d":
 						input.append(realArgs.get(i + 1));
 						break;
 
 					case "f":
-						try (BufferedReader reader = new BufferedReader(new FileReader(realArgs.get(i + 1)))) {
+						try (BufferedReader reader = new BufferedReader(new FileReader(realArgs.get(i + 1))))
+						{
 							char[] cbuf = new char[1024];
 							int len;
-							while ((len = reader.read(cbuf)) != -1) {
+							while ((len = reader.read(cbuf)) != -1)
+							{
 								input.append(cbuf, 0, len);
 							}
-						} catch (IOException e) {
+						} catch (IOException e)
+						{
 							e.printStackTrace();
 						}
 						break;
 
 					case "o":
-						try {
+						try
+						{
 							output = new BufferedWriter(new FileWriter(realArgs.get(i + 1)));
-						} catch (IOException e) {
+						} catch (IOException e)
+						{
 							e.printStackTrace();
 						}
 						fileOutput = true;
@@ -210,10 +250,12 @@ public class MainPlugin extends JavaPlugin {
 						file = realArgs.get(i + 2);
 						alias = realArgs.get(i + 1);
 						f = new File(file);
-						if (!f.exists()) {
+						if (!f.exists())
+						{
 							log.add("[§cWARN§r] Target for alias not existing, alias may not work!");
 						}
-						if (aliases.containsKey(alias.toLowerCase())) {
+						if (aliases.containsKey(alias.toLowerCase()))
+						{
 							log.add("[§cWARN§r] Overwriting already existing alias!");
 						}
 						aliases.put(alias, f);
@@ -227,66 +269,90 @@ public class MainPlugin extends JavaPlugin {
 			}
 		}
 		Object ret;
-		if (global) {
+		if (global)
+		{
 			ret = execute(input.toString());
-		} else {
+		}
+		else
+		{
 			ret = execute(input.toString(), sender);
 		}
 
-		if (ret != null) {
-			if (consoleOutput) {
+		if (ret != null)
+		{
+			if (consoleOutput)
+			{
 				log.add(ret.toString());
 			}
-			if (fileOutput) {
-				try {
+			if (fileOutput)
+			{
+				try
+				{
 					output.write(ret.toString());
-				} catch (IOException e) {
+				} catch (IOException e)
+				{
 					e.printStackTrace();
 				}
 			}
 		}
 
-		if (output != null) {
-			try {
+		if (output != null)
+		{
+			try
+			{
 				output.close();
-			} catch (IOException e) {
+			} catch (IOException e)
+			{
 				e.printStackTrace();
 			}
 		}
 		return ret;
 	}
 
-	public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
-		if (cmd.getName().equalsIgnoreCase("javascript")) {
+	public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args)
+	{
+		if (cmd.getName().equalsIgnoreCase("javascript"))
+		{
 			List<String> realArgs = getRealArgs(args);
 
-			if (realArgs.isEmpty()) {
+			if (realArgs.isEmpty())
+			{
 				return false;
 			}
-			
+
 			List<String> log = new ArrayList<String>();
 			executeCommand(realArgs, sender, log);
 			log.forEach(line -> sender.sendMessage(line));
 
 			return true;
-		} else if (cmd.getName().toLowerCase().startsWith("js")) {
-			if (args.length >= 1) {
+		}
+		else if (cmd.getName().toLowerCase().startsWith("js"))
+		{
+			if (args.length >= 1)
+			{
 				String name = args[0].toLowerCase();
 				sender.sendMessage("[INFO] Looking up " + name);
-				if (aliases.containsKey(name)) {
+				if (aliases.containsKey(name))
+				{
 					File f = aliases.get(name);
-					if (!f.exists()) {
+					if (!f.exists())
+					{
 						sender.sendMessage("[§cWARN§r] Alias references not existing file!");
 						return false;
-					} else {
+					}
+					else
+					{
 						StringBuilder input = new StringBuilder();
-						try (BufferedReader reader = new BufferedReader(new FileReader(f))) {
+						try (BufferedReader reader = new BufferedReader(new FileReader(f)))
+						{
 							char[] cbuf = new char[1024];
 							int len;
-							while ((len = reader.read(cbuf)) != -1) {
+							while ((len = reader.read(cbuf)) != -1)
+							{
 								input.append(cbuf, 0, len);
 							}
-						} catch (IOException e) {
+						} catch (IOException e)
+						{
 							e.printStackTrace();
 						}
 						Object ret = execute(input.toString(), sender);
@@ -297,25 +363,31 @@ public class MainPlugin extends JavaPlugin {
 				}
 			}
 			sender.sendMessage("Available Aliases:");
-			for (String s : aliases.keySet()) {
+			for (String s : aliases.keySet())
+			{
 				sender.sendMessage((aliases.get(s).exists() ? "[ §aOK§r ] " : "[§cFAIL§r] ") + s + " - " + aliases.get(s).getName());
 			}
 		}
 		return false;
 	}
 
-	public Object execute(String script) {
-		try {
+	public Object execute(String script)
+	{
+		try
+		{
 			// Use global context
 			return javaScript.eval(script, globalContext);
-		} catch (ScriptException e) {
+		} catch (ScriptException e)
+		{
 			e.printStackTrace();
 			return null;
 		}
 	}
 
-	public Object execute(String script, CommandSender sender) {
-		try {
+	public Object execute(String script, CommandSender sender)
+	{
+		try
+		{
 			// Put individual context for every script
 			ScriptContext context = new SimpleScriptContext();
 			Bindings bindings = context.getBindings(ScriptContext.ENGINE_SCOPE);
@@ -325,13 +397,15 @@ public class MainPlugin extends JavaPlugin {
 			bindings.put("$", in);
 			Object tmp = javaScript.eval(script, context);
 			return tmp;
-		} catch (ScriptException e) {
+		} catch (ScriptException e)
+		{
 			e.printStackTrace();
 			return null;
 		}
 	}
 
-	public HashMap<String, File> getAliases() {
+	public HashMap<String, File> getAliases()
+	{
 		return aliases;
 	}
 

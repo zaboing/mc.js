@@ -19,8 +19,9 @@ public class AreaEvent extends Event
 		this.player = event.getPlayer();
 		this.base = event;
 	}
-	
-	public void cancel() {
+
+	public void cancel()
+	{
 		base.setCancelled(true);
 	}
 }
