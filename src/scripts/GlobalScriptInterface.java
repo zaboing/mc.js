@@ -6,6 +6,7 @@ import java.io.FileOutputStream;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.concurrent.Callable;
 import java.util.function.Consumer;
 
 import jdk.nashorn.internal.runtime.ScriptObject;
@@ -480,9 +481,9 @@ public class GlobalScriptInterface
 		}
 	}
 
-	public void runLater(Runnable r, int delay)
+	public void runLater(Callable<? super Object> c, int delay)
 	{
-		new DelayedRunnable(r, delay).start();
+		new DelayedRunnable(c, delay, plugin).start();
 	}
 
 	public void log(Object o)
