@@ -2,7 +2,8 @@ package mcjs;
 
 public class CircularArea extends Area
 {
-
+	private static final long serialVersionUID = 280934956086758788L;
+	
 	public int x, y, z, rad_sq;
 
 	public CircularArea(int x, int y, int z, int radius)

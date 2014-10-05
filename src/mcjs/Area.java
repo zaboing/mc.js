@@ -1,5 +1,6 @@
 package mcjs;
 
+import java.io.Serializable;
 import java.util.function.Consumer;
 
 import jdk.nashorn.internal.runtime.ScriptObject;
@@ -8,8 +9,10 @@ import events.BukkitListener;
 import events.Event;
 import events.EventType;
 
-public abstract class Area
+public abstract class Area implements Serializable
 {
+	private static final long serialVersionUID = -6116480712664633245L;
+
 	public abstract boolean isInArea(int x, int y, int z);
 
 	public boolean equals(Object o)

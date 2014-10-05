@@ -16,6 +16,7 @@ import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.block.BlockDamageEvent;
 import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.block.SignChangeEvent;
+import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.event.player.AsyncPlayerChatEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerMoveEvent;
@@ -125,7 +126,24 @@ public class BukkitListener implements Listener
 		notifyGenerics(placeEvent);
 	}
 
-	private void notifyGenerics(Event event)
+	@EventHandler
+	public void playerDie(PlayerDeathEvent event)
+	{
+		PlayerDieEvent dieEvent = new PlayerDieEvent(event);
+		notifyGenerics(dieEvent);
+	}
+
+	public static void pluginEnabled()
+	{
+		notifyGenerics(new Event(EventType.PLUGIN_ENABLED));
+	}
+
+	public static void pluginDisabled()
+	{
+		notifyGenerics(new Event(EventType.PLUGIN_DISABLED));
+	}
+
+	private static void notifyGenerics(Event event)
 	{
 		genericListeners.get(event.eventType).forEach(listener -> listener.onEvent(event));
 	}

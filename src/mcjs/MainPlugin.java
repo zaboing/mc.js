@@ -10,6 +10,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -91,7 +92,7 @@ public class MainPlugin extends JavaPlugin
 		// NASHORN FIX FOR RHINO METHODS
 		execute("load(\"nashorn:mozilla_compat.js\");");
 		execute("importClass(Packages.org.bukkit.Server);");
-		execute("$.broadcast('ï¿½8ï¿½lEnabled JavaScript.ï¿½l');");
+		execute("$.broadcast('§8§lEnabled JavaScript.§r');");
 		File db = new File("plugins/jsserver.obj");
 		if (!db.exists())
 		{
@@ -104,8 +105,13 @@ public class MainPlugin extends JavaPlugin
 				ObjectInputStream ois = new ObjectInputStream(new FileInputStream(db));
 				aliases = (HashMap<String, File>) ois.readObject();
 				ois.close();
+				if (aliases == null)
+				{
+					aliases = new HashMap<>();
+				}
 			} catch (IOException | ClassNotFoundException e)
 			{
+				aliases = new HashMap<>();
 				execute("$.broadcast(Error while loading Alias DB");
 			}
 
@@ -135,6 +141,7 @@ public class MainPlugin extends JavaPlugin
 
 	public void onDisable()
 	{
+		BukkitListener.pluginDisabled();
 		BukkitListener.cleanUp();
 		try
 		{
@@ -146,7 +153,8 @@ public class MainPlugin extends JavaPlugin
 		{
 			execute("$.broadcast(Error while saving Alias DB");
 		}
-		execute("$.broadcast('ï¿½8ï¿½lDisabled JavaScript.ï¿½l');");
+		aliases = null;
+		execute("$.broadcast('§8§lDisabled JavaScript.§r');");
 	}
 
 	private List<String> getRealArgs(String... args)
@@ -195,7 +203,6 @@ public class MainPlugin extends JavaPlugin
 	 */
 	private Object executeCommand(List<String> realArgs, CommandSender sender, List<String> log)
 	{
-		sender.sendMessage(String.join(", ", realArgs));
 		StringBuilder input = new StringBuilder();
 		BufferedWriter output = null;
 		boolean consoleOutput = false;
@@ -211,25 +218,46 @@ public class MainPlugin extends JavaPlugin
 				switch (arg.substring(1))
 				{
 					case "d":
-						input.append(realArgs.get(i + 1));
+						if (realArgs.size() <= i + 1)
+						{
+							return false;
+						}
+						else
+						{
+							input.append(realArgs.get(i + 1));
+						}
 						break;
 
 					case "f":
-						try (BufferedReader reader = new BufferedReader(new FileReader(realArgs.get(i + 1))))
+					{
+						if (realArgs.size() <= i + 1)
 						{
-							char[] cbuf = new char[1024];
-							int len;
-							while ((len = reader.read(cbuf)) != -1)
-							{
-								input.append(cbuf, 0, len);
+							return false;
+						}
+						File f = new File(realArgs.get(i + 1));
+						if (!f.isFile())
+						{
+							sender.sendMessage("FILE NOT FOUND: " + f);
+							return "error";
+						}
+						try
+						{
+							List<String> lines = Files.readAllLines(f.toPath());
+							for (String line : lines) {
+								input.append(line);
+								input.append('\n');
 							}
 						} catch (IOException e)
 						{
 							e.printStackTrace();
 						}
 						break;
-
+					}
 					case "o":
+						if (realArgs.size() <= i + 1)
+						{
+							return false;
+						}
 						try
 						{
 							output = new BufferedWriter(new FileWriter(realArgs.get(i + 1)));
@@ -244,8 +272,12 @@ public class MainPlugin extends JavaPlugin
 						consoleOutput = true;
 						break;
 					case "a":
-						String file,
-						alias;
+					{
+						if (realArgs.size() <= i + 2)
+						{
+							return false;
+						}
+						String file, alias;
 						File f = null;
 						file = realArgs.get(i + 2);
 						alias = realArgs.get(i + 1);
@@ -262,6 +294,7 @@ public class MainPlugin extends JavaPlugin
 						log.add("[INFO] Added alias <" + alias + "> for file <" + file + ">");
 						log.add("[INFO] State: " + (f.exists() ? " Â§aOKÂ§r" : "Â§cFAILÂ§r"));
 						break;
+					}
 					case "-global":
 						global = true;
 						break;
@@ -337,7 +370,7 @@ public class MainPlugin extends JavaPlugin
 					File f = aliases.get(name);
 					if (!f.exists())
 					{
-						sender.sendMessage("[Â§cWARNÂ§r] Alias references not existing file!");
+						sender.sendMessage("[§cWARN§r] Alias references not existing file!");
 						return false;
 					}
 					else
@@ -365,7 +398,7 @@ public class MainPlugin extends JavaPlugin
 			sender.sendMessage("Available Aliases:");
 			for (String s : aliases.keySet())
 			{
-				sender.sendMessage((aliases.get(s).exists() ? "[ Â§aOKÂ§r ] " : "[Â§cFAILÂ§r] ") + s + " - " + aliases.get(s).getName());
+				sender.sendMessage((aliases.get(s).exists() ? "[ §aOK§r ] " : "[§cFAIL§r] ") + s + " - " + aliases.get(s).getName());
 			}
 		}
 		return false;

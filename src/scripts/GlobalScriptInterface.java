@@ -3,6 +3,14 @@ package scripts;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.OutputStream;
+import java.io.Serializable;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -77,6 +85,48 @@ public class GlobalScriptInterface
 	public List<Object> createList()
 	{
 		return new ArrayList<Object>();
+	}
+
+	public void save(Serializable object, String destination)
+	{
+		try (OutputStream outputStream = Files.newOutputStream(Paths.get(destination)))
+		{
+			try (ObjectOutputStream objectStream = new ObjectOutputStream(outputStream))
+			{
+				objectStream.writeObject(object);
+			}
+		} catch (IOException e)
+		{
+			e.printStackTrace();
+		}
+	}
+
+	public Object load(String destination)
+	{
+		try (InputStream inputStream = Files.newInputStream(Paths.get(destination)))
+		{
+			try (ObjectInputStream objectStream = new ObjectInputStream(inputStream))
+			{
+				return objectStream.readObject();
+			}
+		} catch (Exception e)
+		{
+			e.printStackTrace();
+			return null;
+		}
+	}
+
+	public Object loadList(String destination)
+	{
+		Object list = load(destination);
+		if (list != null && list instanceof List)
+		{
+			return list;
+		}
+		else
+		{
+			return createList();
+		}
 	}
 
 	public BlockSelection selectAbsolute(String query)

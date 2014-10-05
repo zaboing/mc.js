@@ -5,6 +5,7 @@ import java.util.List;
 
 public class CompositeArea extends Area
 {
+	private static final long serialVersionUID = 1733830781132156702L;
 
 	public final List<Area> areas = new ArrayList<Area>();
 
