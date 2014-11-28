@@ -3,7 +3,7 @@ package mcjs;
 public class RectangularArea extends Area
 {
 	private static final long serialVersionUID = 4768799041116932340L;
-	
+
 	public int x, y, z, width, height, depth;
 
 	public RectangularArea(int x, int y, int z, int width, int height, int depth)

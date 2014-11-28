@@ -1,10 +1,10 @@
-name: JavaScriptPlugin
+name: mc.js
 main: mcjs.MainPlugin
 version: Alpha
 
 commands:
   javascript:
-    description: Execute the given JavaScript string.
+    description: Execute the given JavaScript string or file.
     usage: /<command> [-d "Direct input string"] [-f "Input file name"] [-c] [-o "Output file name"]
     permission: <plugin name>.basic
     permission-message: You don't have <permission>

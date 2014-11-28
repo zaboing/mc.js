@@ -12,11 +12,13 @@ import java.io.Serializable;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.function.Consumer;
 
+import jdk.nashorn.internal.objects.NativeArray;
 import jdk.nashorn.internal.runtime.ScriptObject;
 import mcjs.Area;
 import mcjs.CircularArea;
@@ -30,6 +32,9 @@ import org.bukkit.Material;
 import org.bukkit.Server;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
+import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.ShapedRecipe;
+import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.scoreboard.Team;
 
 import scripts.BlockSelection.BlockInfo;
@@ -41,115 +46,141 @@ import events.Event;
 import events.EventType;
 import events.GenericListener;
 
-public class GlobalScriptInterface {
+public class GlobalScriptInterface
+{
 
 	public static Server server;
 	protected MainPlugin plugin;
 
-	public static int getPlayerDirection(Player player) {
+	public static int getPlayerDirection(Player player)
+	{
 		double rotation = (player.getLocation().getYaw() - 90) % 360;
 		if (rotation < 0)
 			rotation += 360;
-		if (rotation <= 0 && rotation < 45) {
+		if (rotation <= 0 && rotation < 45)
+		{
 			return 1;
-		} else if (rotation <= 45 && rotation < 135) {
+		}
+		else if (rotation <= 45 && rotation < 135)
+		{
 			return 0;
-		} else if (rotation <= 135 && rotation < 225) {
+		}
+		else if (rotation <= 135 && rotation < 225)
+		{
 			return 3;
-		} else if (rotation <= 225 && rotation < 315) {
+		}
+		else if (rotation <= 225 && rotation < 315)
+		{
 			return 2;
-		} else {
+		}
+		else
+		{
 			return 1;
 		}
 	}
 
 	@SuppressWarnings("deprecation")
-	public void setBlock(String worldName, int id, int x, int y, int z) {
-		server.getWorld(worldName).getBlockAt(x, y, z)
-				.setType(Material.getMaterial(id));
+	public void setBlock(String worldName, int id, int x, int y, int z)
+	{
+		server.getWorld(worldName).getBlockAt(x, y, z).setType(Material.getMaterial(id));
 	}
 
-	public void setBlock(String worldName, String blockName, int x, int y, int z) {
-		server.getWorld(worldName).getBlockAt(x, y, z)
-				.setType(Material.getMaterial(blockName));
+	public void setBlock(String worldName, String blockName, int x, int y, int z)
+	{
+		server.getWorld(worldName).getBlockAt(x, y, z).setType(Material.getMaterial(blockName));
 	}
 
-	public List<Object> createList() {
+	public List<Object> createList()
+	{
 		return new ArrayList<Object>();
 	}
 
-	public void save(Serializable object, String destination) {
-		try (OutputStream outputStream = Files.newOutputStream(Paths
-				.get(destination))) {
-			try (ObjectOutputStream objectStream = new ObjectOutputStream(
-					outputStream)) {
+	public void save(Serializable object, String destination)
+	{
+		try (OutputStream outputStream = Files.newOutputStream(Paths.get(destination)))
+		{
+			try (ObjectOutputStream objectStream = new ObjectOutputStream(outputStream))
+			{
 				objectStream.writeObject(object);
 			}
-		} catch (IOException e) {
+		} catch (IOException e)
+		{
 			e.printStackTrace();
 		}
 	}
 
-	public Object load(String destination) {
-		try (InputStream inputStream = Files.newInputStream(Paths
-				.get(destination))) {
-			try (ObjectInputStream objectStream = new ObjectInputStream(
-					inputStream)) {
+	public Object load(String destination)
+	{
+		try (InputStream inputStream = Files.newInputStream(Paths.get(destination)))
+		{
+			try (ObjectInputStream objectStream = new ObjectInputStream(inputStream))
+			{
 				return objectStream.readObject();
 			}
-		} catch (Exception e) {
+		} catch (Exception e)
+		{
 			e.printStackTrace();
 			return null;
 		}
 	}
 
-	public Object loadList(String destination) {
+	public Object loadList(String destination)
+	{
 		Object list = load(destination);
-		if (list != null && list instanceof List) {
+		if (list != null && list instanceof List)
+		{
 			return list;
-		} else {
+		}
+		else
+		{
 			return createList();
 		}
 	}
 
-	public BlockSelection selectAbsolute(String query) {
+	public BlockSelection selectAbsolute(String query)
+	{
 		BlockSelection bs = new BlockSelection(plugin, server.getWorld("world"));
 		String[] parts = query.split(";");
 		boolean rangeX, rangeY, rangeZ;
 		int x_start = 0, x_end = 0, y_start = 0, y_end = 0, z_start = 0, z_end = 0;
 		{
 			String val = parts[0].trim();
-			if (val.startsWith("-")) {
-				if (val.contains("&")) {
-					x_start = Integer.parseInt(val.substring(0,
-							val.indexOf("&", 1)).trim());
-					x_end = Integer.parseInt(val.substring(
-							val.indexOf("&", 1) + 1).trim());
+			if (val.startsWith("-"))
+			{
+				if (val.contains("&"))
+				{
+					x_start = Integer.parseInt(val.substring(0, val.indexOf("&", 1)).trim());
+					x_end = Integer.parseInt(val.substring(val.indexOf("&", 1) + 1).trim());
 					rangeX = false;
-				} else if (val.substring(1).contains("-")) {
-					x_start = Integer.parseInt(val.substring(0,
-							val.indexOf("-", 1)).trim());
-					x_end = Integer.parseInt(val.substring(
-							val.indexOf("-", 1) + 1).trim());
+				}
+				else if (val.substring(1).contains("-"))
+				{
+					x_start = Integer.parseInt(val.substring(0, val.indexOf("-", 1)).trim());
+					x_end = Integer.parseInt(val.substring(val.indexOf("-", 1) + 1).trim());
 					rangeX = true;
-				} else {
+				}
+				else
+				{
 					x_start = x_end = Integer.parseInt(val);
 					rangeX = true;
 				}
-			} else {
-				if (val.contains("&")) {
-					x_start = Integer.parseInt(val.substring(0,
-							val.indexOf("&")).trim());
-					x_end = Integer.parseInt(val
-							.substring(val.indexOf("&") + 1).trim());
+			}
+			else
+			{
+				if (val.contains("&"))
+				{
+					x_start = Integer.parseInt(val.substring(0, val.indexOf("&")).trim());
+					x_end = Integer.parseInt(val.substring(val.indexOf("&") + 1).trim());
 					rangeX = false;
-				} else if (val.contains("-")) {
-					x_start = Integer.parseInt(val.substring(0,
-							val.indexOf("-")).trim());
-					x_end = Integer.parseInt(val
-							.substring(val.indexOf("-") + 1).trim());
+				}
+				else if (val.contains("-"))
+				{
+					x_start = Integer.parseInt(val.substring(0, val.indexOf("-")).trim());
+					x_end = Integer.parseInt(val.substring(val.indexOf("-") + 1).trim());
 					rangeX = true;
-				} else {
+				}
+				else
+				{
 					x_start = x_end = Integer.parseInt(val);
 					rangeX = true;
 				}
@@ -158,37 +189,42 @@ public class GlobalScriptInterface {
 		}
 		{
 			String val = parts[1].trim();
-			if (val.startsWith("-")) {
-				if (val.contains("&")) {
-					y_start = Integer.parseInt(val.substring(0,
-							val.indexOf("&", 1)).trim());
-					y_end = Integer.parseInt(val.substring(
-							val.indexOf("&", 1) + 1).trim());
+			if (val.startsWith("-"))
+			{
+				if (val.contains("&"))
+				{
+					y_start = Integer.parseInt(val.substring(0, val.indexOf("&", 1)).trim());
+					y_end = Integer.parseInt(val.substring(val.indexOf("&", 1) + 1).trim());
 					rangeY = false;
-				} else if (val.substring(1).contains("-")) {
-					y_start = Integer.parseInt(val.substring(0,
-							val.indexOf("-", 1)).trim());
-					y_end = Integer.parseInt(val.substring(
-							val.indexOf("-", 1) + 1).trim());
+				}
+				else if (val.substring(1).contains("-"))
+				{
+					y_start = Integer.parseInt(val.substring(0, val.indexOf("-", 1)).trim());
+					y_end = Integer.parseInt(val.substring(val.indexOf("-", 1) + 1).trim());
 					rangeY = true;
-				} else {
+				}
+				else
+				{
 					y_start = y_end = Integer.parseInt(val);
 					rangeY = true;
 				}
-			} else {
-				if (val.contains("&")) {
-					y_start = Integer.parseInt(val.substring(0,
-							val.indexOf("&", 1)).trim());
-					y_end = Integer.parseInt(val.substring(
-							val.indexOf("&", 1) + 1).trim());
+			}
+			else
+			{
+				if (val.contains("&"))
+				{
+					y_start = Integer.parseInt(val.substring(0, val.indexOf("&", 1)).trim());
+					y_end = Integer.parseInt(val.substring(val.indexOf("&", 1) + 1).trim());
 					rangeY = false;
-				} else if (val.contains("-")) {
-					y_start = Integer.parseInt(val.substring(0,
-							val.indexOf("-")).trim());
-					y_end = Integer.parseInt(val
-							.substring(val.indexOf("-") + 1).trim());
+				}
+				else if (val.contains("-"))
+				{
+					y_start = Integer.parseInt(val.substring(0, val.indexOf("-")).trim());
+					y_end = Integer.parseInt(val.substring(val.indexOf("-") + 1).trim());
 					rangeY = true;
-				} else {
+				}
+				else
+				{
 					y_start = y_end = Integer.parseInt(val);
 					rangeY = true;
 				}
@@ -197,68 +233,82 @@ public class GlobalScriptInterface {
 		}
 		{
 			String val = parts[2].trim();
-			if (val.startsWith("-")) {
-				if (val.contains("&")) {
-					z_start = Integer.parseInt(val.substring(0,
-							val.indexOf("&", 1)).trim());
-					z_end = Integer.parseInt(val.substring(
-							val.indexOf("&", 1) + 1).trim());
+			if (val.startsWith("-"))
+			{
+				if (val.contains("&"))
+				{
+					z_start = Integer.parseInt(val.substring(0, val.indexOf("&", 1)).trim());
+					z_end = Integer.parseInt(val.substring(val.indexOf("&", 1) + 1).trim());
 					rangeZ = false;
-				} else if (val.substring(1).contains("-")) {
-					z_start = Integer.parseInt(val.substring(0,
-							val.indexOf("-", 1)).trim());
-					z_end = Integer.parseInt(val.substring(
-							val.indexOf("-", 1) + 1).trim());
+				}
+				else if (val.substring(1).contains("-"))
+				{
+					z_start = Integer.parseInt(val.substring(0, val.indexOf("-", 1)).trim());
+					z_end = Integer.parseInt(val.substring(val.indexOf("-", 1) + 1).trim());
 					rangeZ = true;
-				} else {
+				}
+				else
+				{
 					z_start = z_end = Integer.parseInt(val);
 					rangeZ = true;
 				}
-			} else {
-				if (val.contains("&")) {
-					z_start = Integer.parseInt(val.substring(0,
-							val.indexOf("&", 1)).trim());
-					z_end = Integer.parseInt(val.substring(
-							val.indexOf("&", 1) + 1).trim());
+			}
+			else
+			{
+				if (val.contains("&"))
+				{
+					z_start = Integer.parseInt(val.substring(0, val.indexOf("&", 1)).trim());
+					z_end = Integer.parseInt(val.substring(val.indexOf("&", 1) + 1).trim());
 					rangeZ = false;
-				} else if (val.contains("-")) {
-					z_start = Integer.parseInt(val.substring(0,
-							val.indexOf("-")).trim());
-					z_end = Integer.parseInt(val
-							.substring(val.indexOf("-") + 1).trim());
+				}
+				else if (val.contains("-"))
+				{
+					z_start = Integer.parseInt(val.substring(0, val.indexOf("-")).trim());
+					z_end = Integer.parseInt(val.substring(val.indexOf("-") + 1).trim());
 					rangeZ = true;
-				} else {
+				}
+				else
+				{
 					z_start = z_end = Integer.parseInt(val);
 					rangeZ = true;
 				}
 			}
 			// System.out.println("xStart: " + x_start + ", xEnd: " + x_end);
 		}
-		if (x_start > x_end) {
+		if (x_start > x_end)
+		{
 			int tmp = x_end;
 			x_end = x_start;
 			x_start = tmp;
 		}
-		if (y_start > y_end) {
+		if (y_start > y_end)
+		{
 			int tmp = y_end;
 			y_end = y_start;
 			y_start = tmp;
 		}
-		if (z_start > z_end) {
+		if (z_start > z_end)
+		{
 			int tmp = z_end;
 			z_end = z_start;
 			z_start = tmp;
 		}
-		for (int i = x_start; i <= x_end; i++) {
-			if (!rangeX && i != x_start && i != x_end) {
+		for (int i = x_start; i <= x_end; i++)
+		{
+			if (!rangeX && i != x_start && i != x_end)
+			{
 				continue;
 			}
-			for (int j = y_start; j <= y_end; j++) {
-				if (!rangeY && j != y_start && j != y_end) {
+			for (int j = y_start; j <= y_end; j++)
+			{
+				if (!rangeY && j != y_start && j != y_end)
+				{
 					continue;
 				}
-				for (int k = z_start; k <= z_end; k++) {
-					if (!rangeZ && k != z_start && k != z_end) {
+				for (int k = z_start; k <= z_end; k++)
+				{
+					if (!rangeZ && k != z_start && k != z_end)
+					{
 						continue;
 					}
 					BlockInfo b = new BlockInfo();
@@ -272,30 +322,37 @@ public class GlobalScriptInterface {
 		return bs;
 	}
 
-	public void spawnEntity(Location location, EntityType type) {
+	public void spawnEntity(Location location, EntityType type)
+	{
 		location.getWorld().spawnEntity(location, type);
 	}
 
-	public void spawnEntity(double x, double y, double z, EntityType type) {
+	public void spawnEntity(double x, double y, double z, EntityType type)
+	{
 		spawnEntity(new Location(server.getWorld("world"), x, y, z), type);
 	}
 
-	public void broadcast(String messsage, String broadcastChannel) {
+	public void broadcast(String messsage, String broadcastChannel)
+	{
 		server.broadcast(messsage, broadcastChannel);
 	}
 
-	public void door(int x, int y, int z) {
+	public void door(int x, int y, int z)
+	{
 	}
 
-	public Location loc(double x, double y, double z) {
+	public Location loc(double x, double y, double z)
+	{
 		return new Location(server.getWorld("world"), x, y, z);
 	}
 
-	public void block(String block) {
+	public void block(String block)
+	{
 		plugin.setBlock(Material.getMaterial(block));
 	}
 
-	public void blockLight(String block) {
+	public void blockLight(String block)
+	{
 		plugin.setLight(Material.getMaterial(block));
 	}
 
@@ -305,7 +362,8 @@ public class GlobalScriptInterface {
 	 *            The listener (Nashorn casts JS-methods to interfaces)
 	 */
 	@Deprecated
-	public void addAreaEnterListener(AreaEnterListener listener) {
+	public void addAreaEnterListener(AreaEnterListener listener)
+	{
 		BukkitListener.areaEnterListeners.add(listener);
 	}
 
@@ -315,7 +373,8 @@ public class GlobalScriptInterface {
 	 *            The listener (Nashorn casts JS-methods to interfaces)
 	 */
 	@Deprecated
-	public void addAreaExitListener(AreaExitListener listener) {
+	public void addAreaExitListener(AreaExitListener listener)
+	{
 		BukkitListener.areaExitListeners.add(listener);
 	}
 
@@ -325,25 +384,23 @@ public class GlobalScriptInterface {
 	 *            The listener (Nashorn casts JS-methods to interfaces)
 	 */
 	@Deprecated
-	public void addAreaMoveListener(AreaMoveListener listener) {
+	public void addAreaMoveListener(AreaMoveListener listener)
+	{
 		BukkitListener.areaMoveListeners.add(listener);
 	}
 
-	public void addBlockClickListener(Location location,
-			GenericListener listener) {
-		if (!BukkitListener.blockClickListeners.containsKey(location)) {
-			BukkitListener.blockClickListeners.put(location,
-					new HashSet<GenericListener>());
+	public void addBlockClickListener(Location location, GenericListener listener)
+	{
+		if (!BukkitListener.blockClickListeners.containsKey(location))
+		{
+			BukkitListener.blockClickListeners.put(location, new HashSet<GenericListener>());
 		}
 		BukkitListener.blockClickListeners.get(location).add(listener);
 	}
 
-	public void addBlockClickListener(ScriptObject location,
-			Consumer<Event> listener) {
-		addBlockClickListener(
-				new Location(server.getWorld("world"), location.getDouble("x"),
-						location.getDouble("y"), location.getDouble("z")),
-				new GenericListener(listener));
+	public void addBlockClickListener(ScriptObject location, Consumer<Event> listener)
+	{
+		addBlockClickListener(new Location(server.getWorld("world"), location.getDouble("x"), location.getDouble("y"), location.getDouble("z")), new GenericListener(listener));
 	}
 
 	/**
@@ -352,7 +409,8 @@ public class GlobalScriptInterface {
 	 * @param area
 	 *            The Area
 	 */
-	public void registerArea(Area area) {
+	public void registerArea(Area area)
+	{
 		BukkitListener.areas.add(area);
 	}
 
@@ -373,8 +431,8 @@ public class GlobalScriptInterface {
 	 * @param depth
 	 *            The depth of the area
 	 */
-	public void registerArea(int x, int y, int z, int width, int height,
-			int depth) {
+	public void registerArea(int x, int y, int z, int width, int height, int depth)
+	{
 		registerArea(new RectangularArea(x, y, z, width, height, depth));
 	}
 
@@ -391,7 +449,8 @@ public class GlobalScriptInterface {
 	 * @param radius
 	 *            The radius of the sphere
 	 */
-	public void registerArea(int x, int y, int z, int radius) {
+	public void registerArea(int x, int y, int z, int radius)
+	{
 		registerArea(new CircularArea(x, y, z, radius));
 	}
 
@@ -403,24 +462,30 @@ public class GlobalScriptInterface {
 	 * @param object
 	 *            The JS-Object holding the area information
 	 */
-	public void registerArea(ScriptObject object) {
+	public void registerArea(ScriptObject object)
+	{
 		registerArea(Area.convertFromJSObject(object));
 	}
 
-	public void clear(String block) {
+	public void clear(String block)
+	{
 		plugin.setClear(Material.getMaterial(block));
 	}
 
-	public void log(String message) {
+	public void log(String message)
+	{
 		System.out.println(message);
 	}
 
-	public void addAlias(String alias, String file) {
+	public void addAlias(String alias, String file)
+	{
 		File f = new File(file);
-		if (!f.exists()) {
+		if (!f.exists())
+		{
 			log("[§cWARN§r] Target for alias not existing, alias may not work!");
 		}
-		if (plugin.getAliases().containsKey(alias.toLowerCase())) {
+		if (plugin.getAliases().containsKey(alias.toLowerCase()))
+		{
 			log("[§cWARN§r] Overwriting already existing alias!");
 		}
 		plugin.getAliases().put(alias, f);
@@ -428,82 +493,98 @@ public class GlobalScriptInterface {
 		log("[INFO] State: " + (f.exists() ? " §aOK§r" : "§cFAIL§r"));
 	}
 
-	public void copyFile(String src, String dest) {
+	public void copyFile(String src, String dest)
+	{
 		File src_ = new File(src);
 		File dest_ = new File(dest);
-		if (src_.exists()) {
-			try {
+		if (src_.exists())
+		{
+			try
+			{
 				dest_.getParentFile().mkdirs();
 				FileInputStream fis = new FileInputStream(src_);
 				FileOutputStream fos = new FileOutputStream(dest_);
 				byte tmp[] = new byte[1024];
-				while (fis.read(tmp) > 0) {
+				while (fis.read(tmp) > 0)
+				{
 					fos.write(tmp);
 				}
 				fis.close();
 				fos.close();
 				log("[ §aOK§r ] Succeded in Copying File!");
-			} catch (Exception e) {
+			} catch (Exception e)
+			{
 				log("[§cFAIL§r] " + e.getMessage());
 			}
-		} else {
+		}
+		else
+		{
 			log("[§cFAIL§r] Source file not found!");
 		}
 	}
 
-	public void broadcast(String message) {
+	public void broadcast(String message)
+	{
 		server.broadcastMessage(message);
 	}
 
-	public void spawnPlatform(String worldName, int x, int y, int z,
-			String blockName) {
-		for (int i = -2; i <= 2; i++) {
-			for (int j = -2; j <= 2; j++) {
+	public void spawnPlatform(String worldName, int x, int y, int z, String blockName)
+	{
+		for (int i = -2; i <= 2; i++)
+		{
+			for (int j = -2; j <= 2; j++)
+			{
 				setBlock(worldName, blockName, x + i, y, z + j);
 			}
 		}
 	}
 
-	public void runLater(Callable<? super Object> c, int delay) {
+	public void runLater(Callable<? super Object> c, int delay)
+	{
 		new DelayedRunnable(c, delay, plugin).start();
 	}
 
-	public void log(Object o) {
+	public void log(Object o)
+	{
 		log(o == null ? "null" : o.toString() + " [" + o.getClass() + "]");
 	}
 
-	public void on(EventType type, Consumer<Event> listener) {
+	public void on(EventType type, Consumer<Event> listener)
+	{
 		BukkitListener.on(type, listener);
 	}
 
-	public void on(String typeDescriptor, Consumer<Event> listener) {
+	public void on(String typeDescriptor, Consumer<Event> listener)
+	{
 		on(EventType.byDescriptor(typeDescriptor), listener);
 	}
 
-	public Team getTeam(String teamName) {
-		return Bukkit.getScoreboardManager().getMainScoreboard()
-				.getTeam(teamName);
+	public Team getTeam(String teamName)
+	{
+		return Bukkit.getScoreboardManager().getMainScoreboard().getTeam(teamName);
 	}
 
-	public Team getOrCreateTeam(String teamName) {
+	public Team getOrCreateTeam(String teamName)
+	{
 		Holder<Team> holder = new Holder<>();
 		holder.held = getTeam(teamName);
-		synchronized (holder) {
-			if (holder.held == null) {
-				Bukkit.getScheduler().callSyncMethod(
-						plugin,
-						() -> {
-							holder.held = Bukkit.getScoreboardManager()
-									.getMainScoreboard()
-									.registerNewTeam(teamName);
-							synchronized(holder) {
-								holder.notifyAll();
-							}
-							return null;
-						});
-				try {
+		synchronized (holder)
+		{
+			if (holder.held == null)
+			{
+				Bukkit.getScheduler().callSyncMethod(plugin, () -> {
+					holder.held = Bukkit.getScoreboardManager().getMainScoreboard().registerNewTeam(teamName);
+					synchronized (holder)
+					{
+						holder.notifyAll();
+					}
+					return null;
+				});
+				try
+				{
 					holder.wait();
-				} catch (InterruptedException e) {
+				} catch (InterruptedException e)
+				{
 					e.printStackTrace();
 				}
 			}
@@ -511,12 +592,63 @@ public class GlobalScriptInterface {
 		return holder.held;
 	}
 
+	public GlobalScriptInterface addShapedRecipe(ScriptObject recipe)
+	{
+		server.resetRecipes();
+		try
+		{
+			ScriptObject outputObject = (ScriptObject) recipe.get("output");
+			ItemStack output = new ItemStack((Material) outputObject.get("type"));
+			if (outputObject.containsKey("size"))
+			{
+				output.setAmount((Integer) outputObject.get("size"));
+			}
+			if (outputObject.containsKey("name"))
+			{
+				ItemMeta meta = output.getItemMeta();
+				meta.setDisplayName((String) outputObject.get("name"));
+				output.setItemMeta(meta);
+			}
+
+			ShapedRecipe shapedRecipe = new ShapedRecipe(output);
+
+			NativeArray shapeArray = (NativeArray) recipe.get("shape");
+			String[] shape = Arrays.copyOf(shapeArray.asObjectArray(), (int) (long) (Long) shapeArray.getLength(), String[].class);
+			shapedRecipe.shape(shape);
+
+			ScriptObject usingObject = (ScriptObject) recipe.get("using");
+
+			for (String line : shape)
+			{
+				for (int i = 0; i < line.length(); ++i)
+				{
+					String ingredient = line.substring(i, i + 1);
+					if (usingObject.containsKey(ingredient))
+					{
+						shapedRecipe.setIngredient(ingredient.charAt(0), (Material) usingObject.get(ingredient));
+					}
+				}
+			}
+
+			server.addRecipe(shapedRecipe);
+
+			log("Successfully added recipe");
+		} catch (Exception e)
+		{
+			log("Error while parsing recipe: " + e);
+			server.getLogger().info(e.toString());
+		}
+		return this;
+	}
+
 	@SuppressWarnings("deprecation")
-	public Player getPlayer(String name) {
+	public Player getPlayer(String name)
+	{
 		return server.getPlayer(name);
 	}
 
-	public GlobalScriptInterface(MainPlugin plugin) {
+	public GlobalScriptInterface(MainPlugin plugin)
+	{
 		this.plugin = plugin;
 	}
 }

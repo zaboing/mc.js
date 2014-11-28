@@ -38,6 +38,7 @@ import events.SignEvent;
 public class MainPlugin extends JavaPlugin
 {
 
+	private static final String ALIAS_DB_NAME = "aliases.ser";
 	private ScriptEngineManager factory;
 	private ScriptEngine javaScript;
 	private HashMap<String, File> aliases;
@@ -93,7 +94,7 @@ public class MainPlugin extends JavaPlugin
 		execute("load(\"nashorn:mozilla_compat.js\");");
 		execute("importClass(Packages.org.bukkit.Server);");
 		execute("$.broadcast('§8§lEnabled JavaScript.§r');");
-		File db = new File("plugins/jsserver.obj");
+		File db = new File(this.getDataFolder(), ALIAS_DB_NAME);
 		if (!db.exists())
 		{
 			aliases = new HashMap<>();
@@ -112,7 +113,6 @@ public class MainPlugin extends JavaPlugin
 			} catch (IOException | ClassNotFoundException e)
 			{
 				aliases = new HashMap<>();
-				execute("$.broadcast(Error while loading Alias DB");
 			}
 
 		}
@@ -141,17 +141,22 @@ public class MainPlugin extends JavaPlugin
 
 	public void onDisable()
 	{
+		this.getDataFolder().mkdirs();
+		getServer().resetRecipes();
 		BukkitListener.pluginDisabled();
 		BukkitListener.cleanUp();
 		try
 		{
-			ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream("plugins/jsserver.obj"));
+			ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(new File(this.getDataFolder(), ALIAS_DB_NAME)));
 			oos.writeObject(aliases);
 			oos.flush();
 			oos.close();
 		} catch (IOException e)
 		{
-			execute("$.broadcast(Error while saving Alias DB");
+			execute("$.broadcast('Error while saving Alias DB');");
+			getServer().broadcastMessage(e.toString());
+			e.printStackTrace();
+			// execute("$.broadcast('" + e + "');");
 		}
 		aliases = null;
 		execute("$.broadcast('§8§lDisabled JavaScript.§r');");
@@ -243,7 +248,8 @@ public class MainPlugin extends JavaPlugin
 						try
 						{
 							List<String> lines = Files.readAllLines(f.toPath());
-							for (String line : lines) {
+							for (String line : lines)
+							{
 								input.append(line);
 								input.append('\n');
 							}

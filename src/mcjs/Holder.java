@@ -1,13 +1,16 @@
 package mcjs;
 
-public class Holder<T> {
+public class Holder<T>
+{
 	public T held;
-	
-	public Holder() {
-		
+
+	public Holder()
+	{
+
 	}
-	
-	public Holder(T held) {
+
+	public Holder(T held)
+	{
 		this.held = held;
 	}
 }
