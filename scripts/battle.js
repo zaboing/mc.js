@@ -1,6 +1,7 @@
 var GameMode = Java.type("org.bukkit.GameMode");
 var Sound = Java.type("org.bukkit.Sound");
 var Achievement = Java.type("org.bukkit.Achievement");
+var Material = Java.type("org.bukkit.Material");
 
 var allAchievements = Achievement.values();
 
@@ -123,3 +124,16 @@ function release(player) {
 	player.setCanPickupItems(true);
 	player.setGameMode(GameMode.SURVIVAL);
 }
+
+
+$.addShapedRecipe({
+	"output": {
+		"type": Material.MUSHROOM_SOUP, 
+		"size": 1,
+		"name": "Cactus stew"
+	},
+	"shape": ["X ", "  "],
+	"using": {
+		"X": Material.CACTUS
+	}
+});
