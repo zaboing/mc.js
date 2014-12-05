@@ -87,7 +87,6 @@ public class MainPlugin extends JavaPlugin
 		factory = new ScriptEngineManager(getClass().getClassLoader());
 		javaScript = factory.getEngineByName("JavaScript");
 		Bindings globalBindings = globalContext.getBindings(ScriptContext.ENGINE_SCOPE);
-		globalBindings.put("$", new GlobalScriptInterface(this));
 		globalBindings.put("server", getServer());
 		globalBindings.put("Area", new AreaWrapper());
 		// NASHORN FIX FOR RHINO METHODS
@@ -129,7 +128,7 @@ public class MainPlugin extends JavaPlugin
 			if (text.startsWith("/js "))
 			{
 				List<String> log = new ArrayList<String>();
-				Object ret = executeCommand(getRealArgs(text.substring(4).trim().split(" ")), signEvent.player, log);
+				Object ret = callAlias(getRealArgs(text.substring(4).trim().split(" ")).toArray(new String[0]), log);
 				log.forEach(line -> signEvent.player.sendMessage(line));
 				signEvent.setLine(0, "");
 				signEvent.setLine(1, String.valueOf(ret));
@@ -141,7 +140,7 @@ public class MainPlugin extends JavaPlugin
 
 	public void onDisable()
 	{
-		this.getDataFolder().mkdirs();
+		getDataFolder().mkdirs();
 		getServer().resetRecipes();
 		BukkitListener.pluginDisabled();
 		BukkitListener.cleanUp();
@@ -302,8 +301,14 @@ public class MainPlugin extends JavaPlugin
 						break;
 					}
 					case "-global":
+					{
 						global = true;
 						break;
+					}
+					case "-persistence":
+					{
+
+					}
 				}
 			}
 		}
@@ -367,78 +372,92 @@ public class MainPlugin extends JavaPlugin
 		}
 		else if (cmd.getName().toLowerCase().startsWith("js"))
 		{
-			if (args.length >= 1)
+			List<String> log = new ArrayList<String>();
+			boolean ret = callAlias(args, log);
+			log.forEach(line -> sender.sendMessage(line));
+			return ret;
+		}
+		return false;
+	}
+
+	private boolean callAlias(String[] args, List<String> log)
+	{
+
+		if (args.length >= 1)
+		{
+			String name = args[0].toLowerCase();
+			log.add("[INFO] Looking up " + name);
+			if (aliases.containsKey(name))
 			{
-				String name = args[0].toLowerCase();
-				sender.sendMessage("[INFO] Looking up " + name);
-				if (aliases.containsKey(name))
+				File f = aliases.get(name);
+				if (!f.exists())
 				{
-					File f = aliases.get(name);
-					if (!f.exists())
+					log.add("[§cWARN§r] Alias references not existing file!");
+					return false;
+				}
+				else
+				{
+					StringBuilder input = new StringBuilder();
+					try (BufferedReader reader = new BufferedReader(new FileReader(f)))
 					{
-						sender.sendMessage("[§cWARN§r] Alias references not existing file!");
-						return false;
-					}
-					else
-					{
-						StringBuilder input = new StringBuilder();
-						try (BufferedReader reader = new BufferedReader(new FileReader(f)))
+						char[] cbuf = new char[1024];
+						int len;
+						while ((len = reader.read(cbuf)) != -1)
 						{
-							char[] cbuf = new char[1024];
-							int len;
-							while ((len = reader.read(cbuf)) != -1)
-							{
-								input.append(cbuf, 0, len);
-							}
-						} catch (IOException e)
-						{
-							e.printStackTrace();
+							input.append(cbuf, 0, len);
 						}
-						Object ret = execute(input.toString(), sender);
-						if (ret != null)
-							sender.sendMessage(ret.toString());
-						return true;
+					} catch (IOException e)
+					{
+						e.printStackTrace();
 					}
+					Object ret = execute(input.toString());
+					if (ret != null)
+						log.add(ret.toString());
+					return true;
 				}
 			}
-			sender.sendMessage("Available Aliases:");
-			for (String s : aliases.keySet())
-			{
-				sender.sendMessage((aliases.get(s).exists() ? "[ §aOK§r ] " : "[§cFAIL§r] ") + s + " - " + aliases.get(s).getName());
-			}
+		}
+		log.add("Available Aliases:");
+		for (String s : aliases.keySet())
+		{
+			log.add((aliases.get(s).exists() ? "[ §aOK§r ] " : "[§cFAIL§r] ") + s + " - " + aliases.get(s).getName());
 		}
 		return false;
 	}
 
 	public Object execute(String script)
 	{
-		try
-		{
-			// Use global context
-			return javaScript.eval(script, globalContext);
-		} catch (ScriptException e)
-		{
-			e.printStackTrace();
-			return null;
-		}
+		ScriptContext context = new SimpleScriptContext();
+		Bindings bindings = context.getBindings(ScriptContext.ENGINE_SCOPE);
+		bindings.putAll(globalContext.getBindings(ScriptContext.ENGINE_SCOPE));
+		GlobalScriptInterface in = new GlobalScriptInterface(this, context);
+		bindings.put("$", in);
+		return eval(script, context);
 	}
 
 	public Object execute(String script, CommandSender sender)
 	{
+		if (sender == null)
+		{
+			return execute(script);
+		}
+		ScriptContext context = new SimpleScriptContext();
+		Bindings bindings = context.getBindings(ScriptContext.ENGINE_SCOPE);
+		bindings.putAll(globalContext.getBindings(ScriptContext.ENGINE_SCOPE));
+		LocalScriptInterface in = new LocalScriptInterface(this, context);
+		in.setSender(sender);
+		bindings.put("$", in);
+		return eval(script, context);
+	}
+
+	public Object eval(String script, ScriptContext context)
+	{
 		try
 		{
-			// Put individual context for every script
-			ScriptContext context = new SimpleScriptContext();
-			Bindings bindings = context.getBindings(ScriptContext.ENGINE_SCOPE);
-			bindings.putAll(globalContext.getBindings(ScriptContext.ENGINE_SCOPE));
-			LocalScriptInterface in = new LocalScriptInterface(this);
-			in.setSender(sender);
-			bindings.put("$", in);
-			Object tmp = javaScript.eval(script, context);
-			return tmp;
-		} catch (ScriptException e)
+			return javaScript.eval(script, context);
+		} catch (ScriptException se)
 		{
-			e.printStackTrace();
+			se.printStackTrace();
 			return null;
 		}
 	}

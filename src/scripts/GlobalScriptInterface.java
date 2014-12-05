@@ -3,20 +3,15 @@ package scripts;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
-import java.io.OutputStream;
 import java.io.Serializable;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.function.Consumer;
+
+import javax.script.ScriptContext;
 
 import jdk.nashorn.internal.objects.NativeArray;
 import jdk.nashorn.internal.runtime.ScriptObject;
@@ -25,6 +20,7 @@ import mcjs.CircularArea;
 import mcjs.Holder;
 import mcjs.MainPlugin;
 import mcjs.RectangularArea;
+import mcjs.Util;
 
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
@@ -97,37 +93,18 @@ public class GlobalScriptInterface
 
 	public void save(Serializable object, String destination)
 	{
-		try (OutputStream outputStream = Files.newOutputStream(Paths.get(destination)))
-		{
-			try (ObjectOutputStream objectStream = new ObjectOutputStream(outputStream))
-			{
-				objectStream.writeObject(object);
-			}
-		} catch (IOException e)
-		{
-			e.printStackTrace();
-		}
+		Util.save(object, destination);
 	}
 
 	public Object load(String destination)
 	{
-		try (InputStream inputStream = Files.newInputStream(Paths.get(destination)))
-		{
-			try (ObjectInputStream objectStream = new ObjectInputStream(inputStream))
-			{
-				return objectStream.readObject();
-			}
-		} catch (Exception e)
-		{
-			e.printStackTrace();
-			return null;
-		}
+		return Util.load(destination);
 	}
 
 	public Object loadList(String destination)
 	{
-		Object list = load(destination);
-		if (list != null && list instanceof List)
+		Object list = Util.load(destination, List.class);
+		if (list != null)
 		{
 			return list;
 		}
