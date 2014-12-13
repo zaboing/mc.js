@@ -63,6 +63,6 @@ chdir %OUT_DIR%
 jar cfM %OLD_DIR%/%BUILD_DIR%/%BUILD_NAME% ./*
 chdir %OLD_DIR%
 jar uf %BUILD_DIR%/%BUILD_NAME% plugin.yml
-start explorer %BUILD_DIR%
+REM start explorer %BUILD_DIR%
 
 goto :eof

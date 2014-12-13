@@ -30,7 +30,6 @@ import org.bukkit.plugin.java.JavaPlugin;
 
 import scripts.GlobalScriptInterface;
 import scripts.LocalScriptInterface;
-import wrappers.AreaWrapper;
 import events.BukkitListener;
 import events.Event;
 import events.EventType;
@@ -86,10 +85,9 @@ public class MainPlugin extends JavaPlugin
 		GlobalScriptInterface.server = getServer();
 		globalContext = new SimpleScriptContext();
 		factory = new NashornScriptEngineFactory();
-		javaScript = factory.getScriptEngine();
+		javaScript = factory.getScriptEngine(getClass().getClassLoader());
 		Bindings globalBindings = globalContext.getBindings(ScriptContext.ENGINE_SCOPE);
 		globalBindings.put("server", getServer());
-		globalBindings.put("Area", new AreaWrapper());
 		execute("$.broadcast('§8§lEnabled JavaScript.§r');");
 		File db = new File(this.getDataFolder(), ALIAS_DB_NAME);
 		if (!db.exists())
