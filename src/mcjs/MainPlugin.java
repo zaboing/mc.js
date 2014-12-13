@@ -18,9 +18,10 @@ import java.util.List;
 import javax.script.Bindings;
 import javax.script.ScriptContext;
 import javax.script.ScriptEngine;
-import javax.script.ScriptEngineManager;
 import javax.script.ScriptException;
 import javax.script.SimpleScriptContext;
+
+import jdk.nashorn.api.scripting.NashornScriptEngineFactory;
 
 import org.bukkit.Material;
 import org.bukkit.command.Command;
@@ -39,7 +40,7 @@ public class MainPlugin extends JavaPlugin
 {
 
 	private static final String ALIAS_DB_NAME = "aliases.ser";
-	private ScriptEngineManager factory;
+	private NashornScriptEngineFactory factory;
 	private ScriptEngine javaScript;
 	private HashMap<String, File> aliases;
 
@@ -84,14 +85,11 @@ public class MainPlugin extends JavaPlugin
 	{
 		GlobalScriptInterface.server = getServer();
 		globalContext = new SimpleScriptContext();
-		factory = new ScriptEngineManager(getClass().getClassLoader());
-		javaScript = factory.getEngineByName("JavaScript");
+		factory = new NashornScriptEngineFactory();
+		javaScript = factory.getScriptEngine();
 		Bindings globalBindings = globalContext.getBindings(ScriptContext.ENGINE_SCOPE);
 		globalBindings.put("server", getServer());
 		globalBindings.put("Area", new AreaWrapper());
-		// NASHORN FIX FOR RHINO METHODS
-		execute("load(\"nashorn:mozilla_compat.js\");");
-		execute("importClass(Packages.org.bukkit.Server);");
 		execute("$.broadcast('§8§lEnabled JavaScript.§r');");
 		File db = new File(this.getDataFolder(), ALIAS_DB_NAME);
 		if (!db.exists())
@@ -430,7 +428,7 @@ public class MainPlugin extends JavaPlugin
 		ScriptContext context = new SimpleScriptContext();
 		Bindings bindings = context.getBindings(ScriptContext.ENGINE_SCOPE);
 		bindings.putAll(globalContext.getBindings(ScriptContext.ENGINE_SCOPE));
-		GlobalScriptInterface in = new GlobalScriptInterface(this, context);
+		GlobalScriptInterface in = new GlobalScriptInterface(this);
 		bindings.put("$", in);
 		return eval(script, context);
 	}
@@ -444,7 +442,7 @@ public class MainPlugin extends JavaPlugin
 		ScriptContext context = new SimpleScriptContext();
 		Bindings bindings = context.getBindings(ScriptContext.ENGINE_SCOPE);
 		bindings.putAll(globalContext.getBindings(ScriptContext.ENGINE_SCOPE));
-		LocalScriptInterface in = new LocalScriptInterface(this, context);
+		LocalScriptInterface in = new LocalScriptInterface(this);
 		in.setSender(sender);
 		bindings.put("$", in);
 		return eval(script, context);
